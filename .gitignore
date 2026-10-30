@@ -1,6 +1,8 @@
 .gradle/
 .kotlin/
 .idea/
+.vscode/
+.fleet/
 local.properties
 build/
 **/build/
@@ -9,10 +11,43 @@ build/
 firmware/.pio/
 tmp/
 entrega/
+node_modules/
+coverage/
+.externalNativeBuild/
+.cxx/
+captures/
+
+# Configuración local y secretos
+.env
+.env.*
+!.env.example
+.secrets/
+secrets.*
+credentials.*
+google-services.json
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key
+
+# Archivos del sistema y editores
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# Paquetes y artefactos generados
 *.iml
 *.apk
+*.aab
 *.bin
 *.elf
 *.map
 *.log
+*.zip
+*.7z
 
