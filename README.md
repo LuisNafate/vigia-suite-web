@@ -55,7 +55,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 El código móvil y su descarga se publican por separado:
 
 - [Repositorio Vigía Suite Android](https://github.com/LuisNafate/vigia-suite-android)
-- [Descargar la versión APK más reciente](https://github.com/LuisNafate/vigia-suite-android/releases/latest)
+- [Descargar Android 0.7.0 Beta](https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta)
 
 ## Firmware manual
 
