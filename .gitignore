@@ -3,6 +3,7 @@
 .idea/
 .vscode/
 .fleet/
+.vercel/
 local.properties
 build/
 **/build/
