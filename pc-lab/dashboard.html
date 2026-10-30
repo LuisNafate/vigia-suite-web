@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>Vigía Suite · Web</title>
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <main class="shell">
+    <header class="topbar">
+      <div><p class="eyebrow">CENTRO DE DEFENSA LOCAL</p><h1>Controla tu <span>entorno.</span></h1><p class="subtitle">Una lectura clara de Wi-Fi, Bluetooth y el estado del sensor.</p></div>
+      <div class="live-pill" id="livePill"><span class="pulse"></span><span id="liveText">SIN CONEXIÓN</span></div>
+    </header>
+
+    <nav class="section-tabs" aria-label="Apartados de Vigía Suite">
+      <div class="side-brand"><img src="icon.svg" alt=""><div><strong>Vigía</strong><small>Security Suite</small></div></div>
+      <p class="nav-label">NAVEGACIÓN</p>
+      <button class="tab active" data-view-target="inicio"><strong>Inicio</strong><small>Conectar y comenzar</small></button>
+      <button class="tab" data-view-target="analisis"><strong>Resumen</strong><small>Riesgos y acciones</small></button>
+      <button class="tab" data-view-target="wifi"><strong>Redes Wi-Fi <span id="wifiBadge">0</span></strong><small>Seguridad y canales</small></button>
+      <button class="tab" data-view-target="bluetooth"><strong>Bluetooth <span id="bleBadge">0</span></strong><small>Privacidad y cercanía</small></button>
+      <button class="tab" data-view-target="diagnostico"><strong>Sistema</strong><small>Sensor y firmware</small></button>
+      <div class="side-note"><span>VIGIA/2</span><strong>Procesamiento local</strong><small>Los datos permanecen en este dispositivo.</small></div>
+    </nav>
+
+    <section class="view active" data-view="inicio">
+      <ol class="journey" aria-label="Progreso de la evaluación">
+        <li class="active" id="stepConnect"><span>1</span><div><strong>Conecta el sensor</strong><small>Autoriza el puerto USB</small></div></li>
+        <li id="stepScan"><span>2</span><div><strong>Evalúa el entorno</strong><small>Wi-Fi y Bluetooth</small></div></li>
+        <li id="stepReview"><span>3</span><div><strong>Revisa prioridades</strong><small>Hallazgos explicados</small></div></li>
+        <li id="stepExport"><span>4</span><div><strong>Guarda el informe</strong><small>JSON o CSV</small></div></li>
+      </ol>
+      <div class="hero-grid">
+        <article class="panel sensor-panel">
+          <div class="panel-title"><div class="icon-box"><img src="icon.svg" alt=""></div><div><p class="overline">SENSOR PRINCIPAL</p><h2 id="deviceName">NodeMCU ESP-32S</h2></div></div>
+          <div class="sensor-stats">
+            <div><span>PUERTO</span><strong id="portValue">Buscando sensor</strong></div>
+            <div><span>ENLACE</span><strong>USB-UART · 115200</strong></div>
+            <div><span>CHIPSET</span><strong>Silicon Labs CP210x</strong></div>
+            <div><span>PROTOCOLO</span><strong id="protocolValue">Pendiente</strong></div>
+          </div>
+          <p class="status-copy" id="statusCopy">Prepara el sensor, conecta el puerto y ejecuta un análisis.</p>
+          <div class="button-row">
+            <button class="primary" id="connectButton">Conectar sensor</button>
+            <button class="secondary" id="disconnectButton" disabled>Desconectar</button>
+            <button class="secondary" id="installButton" hidden>Instalar Web App</button>
+          </div>
+          <div class="provision-progress" id="provisionProgress" hidden><span class="spinner"></span><span id="provisionText">Preparando firmware…</span></div>
+        </article>
+        <article class="panel risk-panel">
+          <p class="overline">ÚLTIMO ANÁLISIS</p>
+          <div class="risk-ring" id="riskRing"><div><strong id="riskScore">—</strong><span id="riskLevel">SIN DATOS</span></div></div>
+          <p id="riskText">Ejecuta un análisis completo para obtener conclusiones.</p>
+        </article>
+      </div>
+
+      <article class="panel launch-panel">
+        <div><p class="overline">SIGUIENTE PASO</p><h2 id="nextActionTitle">Conecta el sensor para comenzar</h2><p id="nextActionCopy">Después, Vigía medirá Wi-Fi y Bluetooth en una sola evaluación guiada.</p></div>
+        <button class="primary action-large" id="startAnalysisButton" disabled>Evaluar mi entorno</button>
+      </article>
+    </section>
+
+    <section class="view" data-view="analisis">
+      <div class="section-heading"><div><p class="eyebrow">RESULTADO DE LA EVALUACIÓN</p><h2>Resumen y prioridades</h2></div><button class="primary" id="rerunAnalysisButton" disabled>Repetir evaluación</button></div>
+      <article class="guidance-banner"><div><p class="overline">QUÉ HACER AHORA</p><strong id="guidanceTitle">Ejecuta una evaluación completa</strong><p id="guidanceCopy">Vigía te mostrará primero lo que requiere atención.</p></div><button class="secondary" id="guidanceAction">Ir al inicio</button></article>
+      <div class="analysis-grid">
+        <article class="panel score-panel">
+          <p class="overline">NIVEL OBSERVADO</p><div class="score-big" id="analysisScore">—</div><h2 id="analysisLevel">Sin análisis</h2><p id="analysisSummary">Conecta el sensor y ejecuta el análisis completo.</p>
+          <div class="analysis-progress" id="analysisProgress" hidden><span class="spinner"></span><span id="analysisStage">Preparando…</span></div>
+        </article>
+        <article class="panel metrics-panel">
+          <div class="metric"><span>REDES</span><strong id="metricNetworks">0</strong></div>
+          <div class="metric warning"><span>ABIERTAS</span><strong id="metricOpen">0</strong></div>
+          <div class="metric"><span>OCULTAS</span><strong id="metricHidden">0</strong></div>
+          <div class="metric"><span>BLE</span><strong id="metricBle">0</strong></div>
+        </article>
+      </div>
+      <div class="workspace-grid">
+        <article class="panel findings-panel"><p class="overline">HALLAZGOS</p><h2>Qué merece atención</h2><div id="findingsList" class="finding-list"><p class="empty-copy">Aún no hay resultados.</p></div></article>
+        <article class="panel findings-panel"><p class="overline">RECOMENDACIONES</p><h2>Próximas acciones</h2><div id="recommendationsList" class="finding-list"><p class="empty-copy">Las recomendaciones aparecerán aquí.</p></div></article>
+      </div>
+      <article class="panel history-panel">
+        <div class="panel-heading"><div><p class="overline">INFORMES Y REGISTRO</p><h2>Guarda o compara resultados</h2></div><div class="button-row"><button class="secondary" id="exportJsonButton" disabled>Informe JSON</button><button class="secondary" id="exportCsvButton" disabled>Inventario CSV</button><span class="counter" id="historyCounter">0 sesiones</span><button class="ghost" id="clearHistoryButton" disabled>Limpiar</button></div></div>
+        <p class="history-help">Se conserva únicamente en este navegador y registra resúmenes, no tráfico ni contraseñas.</p>
+        <div id="historyList" class="history-list"><p class="empty-copy">Aún no hay análisis guardados.</p></div>
+      </article>
+      <p class="analysis-note">El resultado describe exposición observable; no demuestra por sí mismo una vulnerabilidad explotable. Valida los hallazgos con el responsable de cada red.</p>
+    </section>
+
+    <section class="view" data-view="wifi">
+      <div class="section-heading"><div><p class="eyebrow">INVENTARIO 2.4 GHZ</p><h2>Redes Wi-Fi</h2><p class="section-description">Revisa primero redes abiertas o con protección heredada; la presencia no implica que sean tuyas.</p></div><button class="primary" data-command="SCAN_WIFI" disabled>Actualizar redes</button></div>
+      <div class="filter-bar" aria-label="Filtros de redes Wi-Fi"><span>Mostrar:</span><button class="filter active" data-wifi-filter="all">Todas</button><button class="filter" data-wifi-filter="open">Abiertas</button><button class="filter" data-wifi-filter="protected">Protegidas</button><button class="filter" data-wifi-filter="nearby">Cercanas</button></div>
+      <article class="panel table-panel">
+        <div class="panel-heading"><p id="wifiSummary">Sin resultados.</p><span class="counter" id="resultCounter">0 resultados</span></div>
+        <div class="table-wrap"><table><thead><tr><th>SSID</th><th>RSSI</th><th>CANAL</th><th>SEGURIDAD</th><th>BSSID</th></tr></thead><tbody id="networkTable"><tr class="empty-row"><td colspan="5">Ejecuta el inventario Wi-Fi.</td></tr></tbody></table></div>
+      </article>
+      <article class="panel module-analysis"><p class="overline">ANÁLISIS WI-FI</p><h2>Lectura y acciones sugeridas</h2><div id="wifiAdvice" class="finding-list"><p class="empty-copy">Escanea para recibir recomendaciones contextualizadas.</p></div></article>
+    </section>
+
+    <section class="view" data-view="bluetooth">
+      <div class="section-heading"><div><p class="eyebrow">INVENTARIO CERCANO</p><h2>Dispositivos Bluetooth</h2><p class="section-description">Observa anuncios públicos, cercanía y privacidad sin conectarte a otros dispositivos.</p></div><button class="primary" data-command="SCAN_BLE" disabled>Actualizar dispositivos</button></div>
+      <div class="filter-bar" aria-label="Filtros Bluetooth"><span>Mostrar:</span><button class="filter active" data-ble-filter="all">Todos</button><button class="filter" data-ble-filter="nearby">Cercanos</button><button class="filter" data-ble-filter="connectable">Conectables</button><button class="filter" data-ble-filter="stable">Dirección estable</button></div>
+      <div class="ble-metrics">
+        <article class="panel ble-stat"><span>VISIBLES</span><strong id="bleVisible">0</strong><small>anuncios únicos</small></article>
+        <article class="panel ble-stat"><span>CERCANOS</span><strong id="bleNearby">0</strong><small>señal ≥ −65 dBm</small></article>
+        <article class="panel ble-stat"><span>CONECTABLES</span><strong id="bleConnectable">0</strong><small>aceptan conexión</small></article>
+        <article class="panel ble-stat"><span>DIRECCIÓN ALEATORIA</span><strong id="blePrivate">0</strong><small>protección de privacidad</small></article>
+      </div>
+      <article class="panel table-panel">
+        <div class="panel-heading"><p id="bleSummary">Sin resultados.</p><span class="counter" id="bleCounter">0 resultados</span></div>
+        <div class="table-wrap"><table><thead><tr><th>NOMBRE</th><th>SEÑAL</th><th>CERCANÍA</th><th>DIRECCIÓN</th><th>PRIVACIDAD</th><th>CONEXIÓN</th><th>SERVICIOS / FABRICANTE</th></tr></thead><tbody id="bleTable"><tr class="empty-row"><td colspan="7">Ejecuta el inventario Bluetooth.</td></tr></tbody></table></div>
+      </article>
+      <article class="panel module-analysis"><p class="overline">ANÁLISIS BLUETOOTH</p><h2>Privacidad y superficie observable</h2><div id="bleAdvice" class="finding-list"><p class="empty-copy">Escanea para recibir recomendaciones contextualizadas.</p></div></article>
+      <p class="analysis-note">El inventario solo lee anuncios BLE públicos. No se conecta, empareja ni extrae información privada de los dispositivos.</p>
+    </section>
+
+    <section class="view" data-view="diagnostico">
+      <div class="section-heading"><div><p class="eyebrow">SENSOR Y MANTENIMIENTO</p><h2>Sistema</h2><p class="section-description">Usa estas funciones solo para revisar el sensor o reinstalar su firmware.</p></div><div class="button-row"><button class="provision" id="flashButton">Reinstalar firmware</button><button class="ghost" id="clearButton">Limpiar consola</button></div></div>
+      <div class="module-grid diagnostic-actions">
+        <button class="module" data-command="PING" disabled><span class="module-icon">⌁</span><strong>Validar enlace</strong><small>Comprueba la respuesta del firmware</small></button>
+        <button class="module" data-command="INFO" disabled><span class="module-icon">◈</span><strong>Identidad</strong><small>Placa, chip e identificador</small></button>
+        <button class="module" data-command="STATUS" disabled><span class="module-icon">◇</span><strong>Estado del sensor</strong><small>Memoria libre y tiempo activo</small></button>
+        <button class="module" data-command="BLE_STATUS" disabled><span class="module-icon">◌</span><strong>Comprobar Bluetooth</strong><small>Verifica que el radio BLE esté listo</small></button>
+      </div>
+      <div class="diagnostic-grid">
+        <article class="panel detail-panel"><p class="overline">IDENTIDAD</p><dl><div><dt>Placa</dt><dd id="detailBoard">—</dd></div><div><dt>Chip</dt><dd id="detailChip">—</dd></div><div><dt>ID</dt><dd id="detailMac">—</dd></div><div><dt>Firmware</dt><dd id="detailFirmware">—</dd></div><div><dt>Memoria libre</dt><dd id="detailHeap">—</dd></div><div><dt>Tiempo activo</dt><dd id="detailUptime">—</dd></div></dl></article>
+        <article class="panel terminal-panel"><div class="panel-heading"><div><p class="overline">TELEMETRÍA</p><h2>Consola serial</h2></div><span class="terminal-dot"></span></div><pre id="terminal">[sistema] Vigía Suite Web lista.
+[sistema] Conecta el ESP32 para comenzar.</pre></article>
+      </div>
+    </section>
+
+    <footer><span>Vigía Suite MVP 0.7</span><span>Análisis defensivo en redes y dispositivos autorizados</span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
