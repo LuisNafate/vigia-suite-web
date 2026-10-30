@@ -426,6 +426,8 @@ body {
 
 .view { grid-column: 2; grid-row: 2; padding: 0 32px 32px; }
 footer { grid-column: 2; grid-row: 3; margin: 0; padding: 16px 32px 22px; color: #777; border-top: 1px solid rgba(20,20,20,.08); }
+footer a { color: #303030; font-weight: 800; text-decoration: none; }
+footer a:hover, footer a:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
 .panel {
   color: #1a1a1a;
   border-color: rgba(20,20,20,.11);

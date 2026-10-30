@@ -65,9 +65,13 @@ a { color:inherit; }
 .closing { display:grid; min-height:92vh; place-content:center; justify-items:center; padding:100px 24px; color:#0d1011; text-align:center; background:#f0f0ed; }
 .closing .kicker { color:#6f6247; }
 .primary-cta.light { color:#fff; background:#111516; }
+.closing-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:22px; }
+.text-cta { display:inline-flex; align-items:center; gap:9px; margin-top:30px; color:#111516; text-decoration:none; font-size:12px; font-weight:700; }
+.text-cta:hover,.text-cta:focus-visible { text-decoration:underline; text-underline-offset:4px; }
 footer { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; min-height:130px; padding:30px clamp(24px,5vw,80px); color:#74787a; background:#050708; font-size:11px; }
 footer p { margin:0; text-align:center; }
-footer > a:last-child { justify-self:end; color:#d7d8d8; text-decoration:none; }
+.footer-links { display:flex; justify-self:end; gap:18px; }
+.footer-links a { color:#d7d8d8; text-decoration:none; }
 :focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
 
 @media (max-width:900px) {
