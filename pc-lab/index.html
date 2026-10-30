@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d0e">
+  <meta name="description" content="Vigía Suite convierte un ESP32 en un sensor local para observar Wi-Fi, Bluetooth y exposición del entorno.">
+  <title>Vigía Suite — Observa lo invisible</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+  <a class="skip-link" href="#historia">Saltar a la historia</a>
+  <header class="global-nav" id="globalNav">
+    <a class="brand" href="#inicio" aria-label="Vigía Suite, inicio"><img src="icon.svg" alt=""><span>Vigía <b>Suite</b></span></a>
+    <nav aria-label="Capítulos del proyecto">
+      <a href="#historia" data-seek="0.04">Visión</a><a href="#historia" data-seek="0.30">Diseño</a><a href="#historia" data-seek="0.54">Tecnología</a><a href="#detalles">Detalles</a>
+    </nav>
+    <a class="nav-cta" href="dashboard.html">Abrir laboratorio <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main id="inicio">
+    <section class="sequence" id="historia" aria-label="Historia del sensor ESP32">
+      <div class="sequence-sticky">
+        <canvas id="sequenceCanvas" role="img" aria-label="Animación de despiece de una placa NodeMCU ESP-32S"></canvas>
+        <div class="frame-vignette" aria-hidden="true"></div>
+        <div class="loading-state" id="loadingState" aria-live="polite"><span></span><b>Preparando el sensor</b><small id="loadingProgress">Primer cuadro</small></div>
+
+        <article class="story-beat hero-beat" data-start="0" data-end="0.19">
+          <p class="kicker">Vigía Suite · Defensa local</p><h1>Observa<br>lo invisible.</h1>
+          <p>Un ESP32 transforma las señales cercanas en contexto útil para comprender tu superficie de exposición.</p>
+          <span class="scroll-cue">Desplaza para explorar <i aria-hidden="true"></i></span>
+        </article>
+        <article class="story-beat beat-right" data-start="0.17" data-end="0.39">
+          <p class="kicker">01 · El sensor</p><h2>Pequeño por diseño.<br>Amplio por alcance.</h2>
+          <p>La placa NodeMCU ESP‑32S combina procesamiento, Wi‑Fi de 2.4 GHz y Bluetooth Low Energy en un nodo accesible y portátil.</p>
+        </article>
+        <article class="story-beat beat-left" data-start="0.37" data-end="0.61">
+          <p class="kicker">02 · La arquitectura</p><h2>Hardware y software,<br>una sola lectura.</h2>
+          <p>El firmware inventaría señales autorizadas. La interfaz las organiza, prioriza hallazgos y conserva evidencia local sin enviar datos a la nube.</p>
+        </article>
+        <article class="story-beat beat-right" data-start="0.59" data-end="0.82">
+          <p class="kicker">03 · La decisión</p><h2>Datos que terminan<br>en una acción.</h2>
+          <p>Redes abiertas, cifrado débil, canales saturados e identificadores Bluetooth estables se convierten en recomendaciones comprensibles.</p>
+        </article>
+        <article class="story-beat final-beat" data-start="0.80" data-end="1">
+          <p class="kicker">ESP32 · Web · Android</p><h2>Tu entorno.<br>Bajo tu control.</h2>
+          <p>Conecta el sensor, ejecuta una evaluación guiada y descarga un informe defensivo desde el laboratorio.</p>
+          <a class="primary-cta" href="dashboard.html">Entrar al laboratorio <span aria-hidden="true">→</span></a>
+        </article>
+        <div class="sequence-progress" aria-hidden="true"><span id="sequenceProgress"></span></div>
+        <p class="frame-counter" aria-hidden="true"><span id="frameIndex">001</span> / 192</p>
+      </div>
+    </section>
+
+    <section class="manifesto" id="detalles">
+      <p class="section-index">01 — Propósito</p>
+      <div><h2>La seguridad empieza por saber qué está alrededor.</h2><p>Vigía Suite es una solución educativa y defensiva que une un sensor físico, una aplicación web y una aplicación Android. Su propósito no es atacar redes: es hacer visible la configuración del entorno para tomar mejores decisiones.</p></div>
+    </section>
+    <section class="signal-flow" aria-label="Funcionamiento del sistema">
+      <p class="section-index">02 — Flujo local</p>
+      <ol>
+        <li><span>01</span><div><h3>Observa</h3><p>El ESP32 detecta anuncios y características públicas de Wi‑Fi y Bluetooth.</p></div></li>
+        <li><span>02</span><div><h3>Interpreta</h3><p>La aplicación clasifica señales, seguridad, cercanía y posibles exposiciones.</p></div></li>
+        <li><span>03</span><div><h3>Recomienda</h3><p>El informe prioriza acciones concretas y conserva el registro en tu dispositivo.</p></div></li>
+      </ol>
+    </section>
+    <section class="specs" aria-label="Especificaciones del proyecto">
+      <div class="spec-intro"><p class="section-index">03 — Sistema</p><h2>Construido para aprender.<br>Diseñado para funcionar.</h2></div>
+      <dl>
+        <div><dt>Sensor</dt><dd>NodeMCU ESP‑32S</dd></div><div><dt>Radios</dt><dd>Wi‑Fi 2.4 GHz · BLE</dd></div>
+        <div><dt>Enlace</dt><dd>USB serial · 115200</dd></div><div><dt>Clientes</dt><dd>Web PWA · Android</dd></div>
+        <div><dt>Privacidad</dt><dd>Procesamiento local</dd></div><div><dt>Uso</dt><dd>Defensivo y autorizado</dd></div>
+      </dl>
+    </section>
+    <section class="closing"><p class="kicker">El sensor ya está listo</p><h2>Pasa de observar<br>a comprender.</h2><a class="primary-cta light" href="dashboard.html">Abrir Vigía Suite <span aria-hidden="true">→</span></a></section>
+  </main>
+  <footer><a class="brand" href="#inicio"><img src="icon.svg" alt=""><span>Vigía <b>Suite</b></span></a><p>Proyecto académico de seguridad informática · Análisis defensivo local</p><a href="dashboard.html">Laboratorio</a></footer>
+  <script src="sequence-config.js"></script><script src="landing.js"></script>
+</body>
+</html>
