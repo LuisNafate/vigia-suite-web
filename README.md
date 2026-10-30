@@ -1,15 +1,14 @@
 # Vigía Suite 0.7
 
-Suite defensiva Web + Android conectada a un sensor NodeMCU ESP-32S mediante USB. Ambos clientes ofrecen las mismas funciones y hablan el mismo protocolo serial con el firmware.
+Suite defensiva Web conectada a un sensor NodeMCU ESP-32S mediante USB. Este repositorio contiene la landing, el laboratorio web, el firmware y las herramientas para preparar el sensor.
 
-El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hallazgos explicados y recomendaciones. La web conserva hasta 20 resúmenes en el navegador y exporta el informe completo como JSON o CSV. Android conserva hasta 20 sesiones en el dispositivo y permite guardar o compartir un informe desde el selector del sistema.
+El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hallazgos explicados y recomendaciones. La web conserva hasta 20 resúmenes en el navegador y exporta el informe completo como JSON o CSV.
 
 ## Hardware objetivo
 
 - NodeMCU ESP-32S / NodeMCU-32S.
 - Convertidor USB-UART CP2102 o CH340 integrado en la placa.
 - Para PC: cable USB de datos.
-- Para Android: adaptador USB-OTG y cable USB de datos.
 
 El ESP-32S no tiene USB nativo. La comunicación pasa por el convertidor USB-UART de la placa a 115200 8N1.
 
@@ -51,27 +50,12 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\start-pc-lab.ps1
 ```
 
-## Compilar la versión Android sin Android Studio
+## Aplicación Android
 
-Haz doble clic en `COMPILAR-ANDROID.bat`, o ejecuta:
+El código móvil y su descarga se publican por separado:
 
-```powershell
-.\scripts\build-android.ps1
-```
-
-El APK se genera en:
-
-```text
-app/build/outputs/apk/debug/app-debug.apk
-```
-
-Para instalarlo automáticamente:
-
-1. Activa **Opciones de desarrollador > Depuración USB** en el celular.
-2. Conecta el celular a la PC y acepta la autorización RSA.
-3. Ejecuta `INSTALAR-ANDROID.bat`.
-
-La depuración USB solo se necesita para instalar desde la PC. Para conectar el ESP32 a la aplicación se utiliza USB-OTG; Android solicitará permiso para el CP210x/CH340.
+- [Repositorio Vigía Suite Android](https://github.com/LuisNafate/vigia-suite-android)
+- [Descargar la versión APK más reciente](https://github.com/LuisNafate/vigia-suite-android/releases/latest)
 
 ## Firmware manual
 
@@ -87,7 +71,7 @@ Selecciona **ESP32 Dev Module**, **Partition Scheme: Huge APP (3MB No OTA/1MB SP
 
 - Web/PWA: HTML, CSS y JavaScript; Web Serial para usar el sensor.
 - Asistente local: PowerShell + Arduino CLI para detectar y preparar el ESP32.
-- Android: Kotlin, Jetpack Compose y usb-serial-for-android.
+- Android: repositorio independiente enlazado arriba.
 - Firmware: Arduino-ESP32 con Wi-Fi y BLE.
 - Protocolo VIGIA/2: comandos ASCII y eventos JSON Lines versionados.
 
