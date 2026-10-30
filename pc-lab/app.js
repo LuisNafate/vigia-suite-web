@@ -44,6 +44,7 @@ let wifiFilter = 'all';
 let bleFilter = 'all';
 const eventWaiters = new Map();
 const HISTORY_KEY = 'vigia-suite-analysis-history-v1';
+const LOCAL_HELPER_AVAILABLE = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
 const timestamp = () => new Date().toLocaleTimeString('es-MX', { hour12: false });
 
@@ -62,7 +63,7 @@ function setConnected(connected) {
   elements.livePill.classList.toggle('connected', connected);
   elements.liveText.textContent = connected ? 'SENSOR EN LÍNEA' : 'SIN CONEXIÓN';
   elements.connect.disabled = connected;
-  elements.flash.disabled = connected;
+  elements.flash.disabled = connected || !LOCAL_HELPER_AVAILABLE;
   elements.disconnect.disabled = !connected;
   elements.modules.forEach(button => button.disabled = !connected || analysisRunning);
   elements.startAnalysis.disabled = !connected || analysisRunning;
@@ -429,6 +430,13 @@ async function runFullAnalysis() {
 
 async function refreshDeviceStatus() {
   if (isFlashing || port) return;
+  if (!LOCAL_HELPER_AVAILABLE) {
+    detectedPort = '';
+    elements.flash.disabled = true;
+    elements.flash.textContent = 'Firmware: usa versión local';
+    elements.flash.title = 'La instalación automática requiere INICIAR-VIGIA.bat en una PC local';
+    return;
+  }
   try {
     const response = await fetch('/api/status', { cache: 'no-store' }); const data = await response.json(); const device = data.devices?.[0];
     const previousPort = detectedPort; detectedPort = device?.port || ''; elements.port.textContent = device ? `${device.port} detectado` : 'Conecta el ESP32';
