@@ -31,3 +31,12 @@
 Dashboard monocromático con superficie translúcida, navegación lateral, tarjetas blancas y negras, bordes redondeados amplios y fondo abstracto de pliegues. No se copiaron marca, contenido ni gráficos de la referencia.
 
 La nueva portada adopta una dirección editorial oscura basada en el MP4 del NodeMCU ESP‑32S: tipografía de sistema, un único acento cálido, movimiento ligado al scroll y contenido posterior con amplio espacio en blanco.
+
+## Extensión 0.8 — Recon y detección
+
+- Se inspeccionaron en el navegador integrado los apartados Wi-Fi Recon y Bluetooth Recon.
+- La vista compacta apila las capacidades en una columna con contraste legible.
+- Packet Metadata Monitor, Hidden AP Inspector, Rogue AP Detector, laboratorio seguro, GATT Profile Preview y Tracker Detector actualizan sus resultados sin errores de consola.
+- El botón Deauth Detector permanece desactivado hasta conectar el sensor, como corresponde.
+- El firmware 0.4 con monitor pasivo de deauth/disassoc compila para ESP32 Dev Module con partición `huge_app`.
+- Las herramientas activas no transmiten tramas, no se asocian a redes y no recolectan credenciales ni contenido de paquetes.

@@ -22,7 +22,7 @@
       <p class="nav-label">NAVEGACIÓN</p>
       <button class="tab active" data-view-target="inicio"><strong>Inicio</strong><small>Conectar y comenzar</small></button>
       <button class="tab" data-view-target="analisis"><strong>Resumen</strong><small>Riesgos y acciones</small></button>
-      <button class="tab" data-view-target="wifi"><strong>Redes Wi-Fi <span id="wifiBadge">0</span></strong><small>Seguridad y canales</small></button>
+      <button class="tab" data-view-target="wifi"><strong>Wi-Fi Recon <span id="wifiBadge">0</span></strong><small>Inventario y defensa</small></button>
       <button class="tab" data-view-target="bluetooth"><strong>Bluetooth <span id="bleBadge">0</span></strong><small>Privacidad y cercanía</small></button>
       <button class="tab" data-view-target="diagnostico"><strong>Sistema</strong><small>Sensor y firmware</small></button>
       <div class="side-note"><span>VIGIA/2</span><strong>Procesamiento local</strong><small>Los datos permanecen en este dispositivo.</small></div>
@@ -93,7 +93,22 @@
     </section>
 
     <section class="view" data-view="wifi">
-      <div class="section-heading"><div><p class="eyebrow">INVENTARIO 2.4 GHZ</p><h2>Redes Wi-Fi</h2><p class="section-description">Revisa primero redes abiertas o con protección heredada; la presencia no implica que sean tuyas.</p></div><button class="primary" data-command="SCAN_WIFI" disabled>Actualizar redes</button></div>
+      <div class="section-heading"><div><p class="eyebrow">RECON PASIVO · 2.4 GHZ</p><h2>Wi-Fi Recon & Defense</h2><p class="section-description">Inventaría señales y detecta cambios sin asociarse, inyectar tramas ni guardar contenido de paquetes.</p></div><button class="primary" data-command="SCAN_WIFI" disabled>Ejecutar Wi-Fi Scan</button></div>
+      <div class="capability-grid">
+        <article class="panel capability-card"><span class="capability-tag">TELEMETRÍA</span><h3>Packet Metadata Monitor</h3><p>Cuenta tramas de gestión 802.11 por canal sin conservar payload, cookies, mensajes ni credenciales.</p><button class="secondary requires-sensor" id="packetMonitorButton" disabled>Observar metadatos</button><output id="packetMonitorResult">Sin medición.</output></article>
+        <article class="panel capability-card"><span class="capability-tag">RECON</span><h3>Hidden AP Inspector</h3><p>Identifica redes cuyo nombre no se anuncia y explica sus límites; no intenta desanonimizarlas.</p><button class="secondary" id="hiddenInspectorButton">Analizar redes ocultas</button><output id="hiddenInspectorResult">Ejecuta primero Wi-Fi Scan.</output></article>
+        <article class="panel capability-card"><span class="capability-tag">DEFENSA</span><h3>Deauth Detector</h3><p>Escucha únicamente metadatos de tramas deauth/disassoc durante un barrido corto de canales.</p><button class="secondary requires-sensor" id="deauthMonitorButton" disabled>Monitorear 8 segundos</button><output id="deauthMonitorResult">Sin medición.</output></article>
+        <article class="panel capability-card"><span class="capability-tag">BASELINE</span><h3>Rogue AP Detector</h3><p>Compara BSSID, cifrado y SSID visibles contra una línea base local autorizada.</p><div class="button-row"><button class="secondary" id="saveBaselineButton">Guardar línea base</button><button class="ghost" id="compareBaselineButton">Comparar</button></div><output id="rogueResult">No existe una comparación todavía.</output></article>
+      </div>
+      <article class="panel lab-panel">
+        <div><p class="overline">LABORATORIO CONTROLADO</p><h2>Validaciones sin interferencia</h2><p>Estas herramientas conservan el caso de uso académico sin transmitir beacons falsos, expulsar clientes ni recolectar credenciales.</p></div>
+        <div class="lab-tools">
+          <button class="lab-tool" id="beaconAuditButton"><strong>Beacon configurator</strong><small>Valida nombre visible/oculto sin emitirlo</small></button>
+          <button class="lab-tool" id="pmfAuditButton"><strong>Deauth resilience</strong><small>Checklist de PMF/802.11w para el AP propio</small></button>
+          <button class="lab-tool" id="portalPreviewButton"><strong>Captive portal preview</strong><small>Previsualización local sin formulario ni AP</small></button>
+        </div>
+        <div class="safe-preview" id="labResult">Selecciona una validación. La transmisión activa está deshabilitada por diseño.</div>
+      </article>
       <div class="filter-bar" aria-label="Filtros de redes Wi-Fi"><span>Mostrar:</span><button class="filter active" data-wifi-filter="all">Todas</button><button class="filter" data-wifi-filter="open">Abiertas</button><button class="filter" data-wifi-filter="protected">Protegidas</button><button class="filter" data-wifi-filter="nearby">Cercanas</button></div>
       <article class="panel table-panel">
         <div class="panel-heading"><p id="wifiSummary">Sin resultados.</p><span class="counter" id="resultCounter">0 resultados</span></div>
@@ -103,7 +118,12 @@
     </section>
 
     <section class="view" data-view="bluetooth">
-      <div class="section-heading"><div><p class="eyebrow">INVENTARIO CERCANO</p><h2>Dispositivos Bluetooth</h2><p class="section-description">Observa anuncios públicos, cercanía y privacidad sin conectarte a otros dispositivos.</p></div><button class="primary" data-command="SCAN_BLE" disabled>Actualizar dispositivos</button></div>
+      <div class="section-heading"><div><p class="eyebrow">RECON PASIVO · BLE</p><h2>Bluetooth Recon</h2><p class="section-description">Observa anuncios públicos, servicios declarados y patrones compatibles con rastreadores sin conectarte a otros dispositivos.</p></div><button class="primary" data-command="SCAN_BLE" disabled>Ejecutar BLE Scanner</button></div>
+      <div class="capability-grid ble-capabilities">
+        <article class="panel capability-card"><span class="capability-tag">BLE SCANNER</span><h3>Inventario de anuncios</h3><p>Nombre, RSSI, dirección, fabricante, conectividad y servicios publicados.</p><output id="bleScannerResult">Ejecuta BLE Scanner para comenzar.</output></article>
+        <article class="panel capability-card"><span class="capability-tag">GATT</span><h3>GATT Profile Preview</h3><p>Resume UUID de servicios anunciados. No abre conexiones ni lee características privadas.</p><button class="secondary" id="gattProfileButton">Analizar perfiles</button><output id="gattProfileResult">Sin perfiles analizados.</output></article>
+        <article class="panel capability-card"><span class="capability-tag">PRIVACIDAD</span><h3>Tracker Detector</h3><p>Busca patrones publicitarios compatibles con Find My/AirTag. Una coincidencia no identifica propietario ni confirma seguimiento.</p><button class="secondary" id="trackerDetectorButton">Buscar patrones</button><output id="trackerResult">Sin análisis.</output></article>
+      </div>
       <div class="filter-bar" aria-label="Filtros Bluetooth"><span>Mostrar:</span><button class="filter active" data-ble-filter="all">Todos</button><button class="filter" data-ble-filter="nearby">Cercanos</button><button class="filter" data-ble-filter="connectable">Conectables</button><button class="filter" data-ble-filter="stable">Dirección estable</button></div>
       <div class="ble-metrics">
         <article class="panel ble-stat"><span>VISIBLES</span><strong id="bleVisible">0</strong><small>anuncios únicos</small></article>
@@ -134,7 +154,7 @@
       </div>
     </section>
 
-    <footer><span>Vigía Suite MVP 0.7</span><span>Análisis defensivo en redes y dispositivos autorizados</span><a href="https://github.com/LuisNafate/vigia-suite-web">Código Web ↗</a><a href="https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta">Android APK ↗</a></footer>
+    <footer><span>Vigía Suite MVP 0.8</span><span>Recon pasivo y análisis defensivo en entornos autorizados</span><a href="https://github.com/LuisNafate/vigia-suite-web">Código Web ↗</a><a href="https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta">Android APK ↗</a></footer>
   </main>
   <script src="app.js"></script>
 </body>
