@@ -499,6 +499,32 @@ pre { color: #e9e9e9; background: #111; }
 .risk-chip, .risk-chip.alto, .risk-chip.medio { color: #fff; background: #282828; }
 button:focus-visible { outline-color: #111; }
 
+.capability-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+.capability-card { display: flex; flex-direction: column; align-items: flex-start; min-height: 250px; padding: 20px; }
+.capability-card h3 { margin: 12px 0 8px; font-size: 18px; letter-spacing: -.025em; }
+.capability-card p { flex: 1; margin: 0 0 16px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.capability-card output { display: block; width: 100%; min-height: 42px; margin-top: 13px; padding-top: 12px; color: #555; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.45; }
+.capability-tag { padding: 5px 8px; color: #fff; border-radius: 999px; background: #202020; font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.lab-panel { display: grid; grid-template-columns: minmax(220px,.7fr) 1.3fr; gap: 18px 26px; margin-bottom: 16px; padding: 22px; }
+.lab-panel h2 { margin: 7px 0; }
+.lab-panel p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.lab-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.lab-tool { display: grid; gap: 5px; padding: 15px; text-align: left; color: #222; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.65); }
+.lab-tool:hover { color: #fff; background: #202020; }
+.lab-tool small { color: #777; font-size: 9px; line-height: 1.35; }
+.lab-tool:hover small { color: #bbb; }
+.safe-preview { grid-column: 1 / -1; padding: 14px 16px; color: #555; border: 1px dashed rgba(20,20,20,.2); border-radius: 14px; background: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; }
+.safe-preview.portal-demo { color: #222; border-style: solid; background: #fff; }
+.safe-preview.portal-demo::before { content: "WIFI DE VISITANTES · DEMO LOCAL"; display: block; margin-bottom: 7px; font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.ble-capabilities .capability-card:first-child { color: #fff; background: #202020; }
+.ble-capabilities .capability-card:first-child p,
+.ble-capabilities .capability-card:first-child output { color: #bbb; border-color: rgba(255,255,255,.14); }
+
+@media (max-width: 900px) {
+  .capability-grid, .lab-panel { grid-template-columns: 1fr; }
+  .lab-tools { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 980px) {
   body { padding: 14px; }
   .shell { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; border-radius: 26px; }
@@ -522,5 +548,6 @@ button:focus-visible { outline-color: #111; }
   .journey li { min-width: 180px; }
   .hero-grid, .analysis-grid, .workspace-grid, .diagnostic-grid { grid-template-columns: 1fr; }
   .sensor-stats, .ble-metrics, .metrics-panel { grid-template-columns: repeat(2, 1fr); }
+  .capability-card { min-height: 0; }
 }
 

@@ -90,7 +90,7 @@ function Invoke-FirmwareInstall {
     if ($LASTEXITCODE -ne 0) {
         throw "La carga al ESP32 falló. Cierra el Monitor Serie de Arduino y vuelve a intentar. $uploadOutput"
     }
-    return "Firmware Vigía Sensor 0.3 instalado correctamente en $SerialPort."
+    return "Firmware Vigía Sensor 0.4 instalado correctamente en $SerialPort."
 }
 
 Write-Host "Vigía Suite disponible en $prefix"

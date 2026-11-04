@@ -2,16 +2,65 @@
 #include <BLEDevice.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
+#include <esp_wifi.h>
 
 static const uint32_t SERIAL_BAUD = 115200;
 static const uint8_t MAX_NETWORKS = 32;
 static const uint8_t MAX_BLE_DEVICES = 32;
 static const uint8_t BLE_SCAN_SECONDS = 5;
-static const char *FIRMWARE_VERSION = "0.3.0-arduino";
+static const char *FIRMWARE_VERSION = "0.4.0-arduino";
 
 String commandBuffer;
 BLEScan *bleScanner = nullptr;
 bool bleReady = false;
+volatile uint32_t managementFrameCount = 0;
+volatile uint32_t deauthFrameCount = 0;
+volatile uint32_t disassocFrameCount = 0;
+volatile int8_t strongestManagementRssi = -127;
+volatile uint8_t strongestEventBssid[6] = {0};
+
+void wifiMonitorCallback(void *buffer, wifi_promiscuous_pkt_type_t type) {
+  if (type != WIFI_PKT_MGMT || buffer == nullptr) return;
+  const wifi_promiscuous_pkt_t *packet = static_cast<wifi_promiscuous_pkt_t *>(buffer);
+  if (packet->rx_ctrl.sig_len < 24) return;
+  managementFrameCount++;
+  const uint8_t subtype = (packet->payload[0] >> 4) & 0x0F;
+  if (subtype != 0x0C && subtype != 0x0A) return;
+  if (subtype == 0x0C) deauthFrameCount++;
+  if (subtype == 0x0A) disassocFrameCount++;
+  if (packet->rx_ctrl.rssi > strongestManagementRssi) {
+    strongestManagementRssi = packet->rx_ctrl.rssi;
+    for (uint8_t index = 0; index < 6; index++) strongestEventBssid[index] = packet->payload[16 + index];
+  }
+}
+
+void monitorDeauthFrames() {
+  managementFrameCount = 0;
+  deauthFrameCount = 0;
+  disassocFrameCount = 0;
+  strongestManagementRssi = -127;
+  for (uint8_t index = 0; index < 6; index++) strongestEventBssid[index] = 0;
+  Serial.println("{\"type\":\"deauth_monitor_started\",\"duration_s\":8,\"mode\":\"passive_metadata_only\"}");
+  esp_wifi_set_promiscuous_rx_cb(&wifiMonitorCallback);
+  esp_wifi_set_promiscuous(true);
+  for (uint8_t pass = 0; pass < 2; pass++) {
+    for (uint8_t channel = 1; channel <= 11; channel++) {
+      esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+      delay(350);
+    }
+  }
+  esp_wifi_set_promiscuous(false);
+  char bssid[18];
+  snprintf(bssid, sizeof(bssid), "%02X:%02X:%02X:%02X:%02X:%02X",
+    strongestEventBssid[0], strongestEventBssid[1], strongestEventBssid[2],
+    strongestEventBssid[3], strongestEventBssid[4], strongestEventBssid[5]);
+  Serial.printf(
+    "{\"type\":\"deauth_monitor_finished\",\"deauth\":%lu,\"disassoc\":%lu,"
+    "\"management\":%lu,\"strongest_rssi\":%d,\"bssid\":\"%s\"}\n",
+    (unsigned long)deauthFrameCount, (unsigned long)disassocFrameCount,
+    (unsigned long)managementFrameCount, (int)strongestManagementRssi, bssid
+  );
+}
 
 String jsonEscape(String value) {
   value.replace("\\", "\\\\");
@@ -188,6 +237,8 @@ void processCommand(String command) {
     scanWifi();
   } else if (command == "SCAN_BLE") {
     scanBle();
+  } else if (command == "MONITOR_DEAUTH") {
+    monitorDeauthFrames();
   } else if (command == "REBOOT") {
     Serial.println("{\"type\":\"restarting\"}");
     delay(100);

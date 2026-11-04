@@ -1,4 +1,4 @@
-# Vigía Suite 0.7
+# Vigía Suite 0.8
 
 Suite defensiva Web conectada a un sensor NodeMCU ESP-32S mediante USB. Este repositorio contiene la landing, el laboratorio web, el firmware y las herramientas para preparar el sensor.
 
@@ -18,14 +18,18 @@ El ESP-32S no tiene USB nativo. La comunicación pasa por el convertidor USB-UAR
 - Identidad de placa, chip y MAC con `INFO`.
 - Memoria libre y tiempo activo con `STATUS`.
 - Inventario Wi-Fi 2.4 GHz con `SCAN_WIFI`.
+- Packet Metadata Monitor y detector pasivo de deauth/disassoc con `MONITOR_DEAUTH`; registran únicamente conteos, señal y BSSID, nunca contenido.
+- Inspector de AP ocultos y detector de rogue AP mediante una línea base guardada localmente.
 - Diagnóstico del radio Bluetooth con `BLE_STATUS`.
 - Inventario Bluetooth Low Energy con `SCAN_BLE`: nombre, dirección y tipo de dirección, RSSI, cercanía estimada, conectividad, fabricante y servicios anunciados.
+- Resumen de perfiles GATT anunciados y detección heurística de patrones Find My/AirTag sin conexión al dispositivo.
+- Laboratorio controlado para revisar beacons, resistencia deauth/PMF y portal cautivo sin transmitir tramas ni recolectar credenciales.
 - Deduplicación por dirección BLE y análisis de exposición de identificadores estables.
 - Reinicio controlado con `REBOOT`.
 - Límite de 32 resultados por análisis para proteger la memoria del sensor.
 - Uso local: los resultados no se envían a Internet.
 - Navegación por apartados: Inicio, Resumen, Redes Wi-Fi, Bluetooth y Sistema.
-- Interfaz 0.7 monocromática con navegación lateral en escritorio, navegación compacta en móvil y acciones ordenadas por tarea.
+- Interfaz 0.8 monocromática con navegación lateral en escritorio, navegación compacta en móvil y acciones ordenadas por tarea.
 - Análisis guiado que ejecuta los módulos de forma secuencial y evita escaneos solapados.
 - Puntuación de exposición, hallazgos priorizados y recomendaciones defensivas.
 - Identificación explícita de análisis parciales cuando un módulo no responde.
