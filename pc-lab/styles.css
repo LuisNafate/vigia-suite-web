@@ -500,19 +500,40 @@ pre { color: #e9e9e9; background: #111; }
 button:focus-visible { outline-color: #111; }
 
 .capability-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
-.capability-card { display: flex; flex-direction: column; align-items: flex-start; min-height: 250px; padding: 20px; }
+.function-route { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+.function-route li { display: grid; gap: 4px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.62); }
+.function-route strong { font-size: 11px; }
+.function-route span { color: var(--muted); font-size: 10px; }
+.capability-card { display: flex; flex-direction: column; align-items: stretch; min-height: 330px; padding: 20px; }
+.capability-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.step-number { color: #aaa; font: 700 12px "Cascadia Code", Consolas, monospace; }
 .capability-card h3 { margin: 12px 0 8px; font-size: 18px; letter-spacing: -.025em; }
-.capability-card p { flex: 1; margin: 0 0 16px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.capability-card > p { min-height: 55px; margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .capability-card output { display: block; width: 100%; min-height: 42px; margin-top: 13px; padding-top: 12px; color: #555; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.45; }
 .capability-tag { padding: 5px 8px; color: #fff; border-radius: 999px; background: #202020; font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.function-details { width: 100%; margin-bottom: 15px; border: 1px solid var(--line); border-radius: 13px; background: rgba(245,245,245,.72); }
+.function-details summary { position: relative; padding: 12px 34px 12px 13px; cursor: pointer; font-size: 11px; font-weight: 800; list-style: none; }
+.function-details summary::-webkit-details-marker, .lab-tool summary::-webkit-details-marker { display: none; }
+.function-details summary::after { content: "+"; position: absolute; top: 10px; right: 13px; font-size: 17px; font-weight: 400; }
+.function-details[open] summary::after { content: "−"; }
+.function-details ul { display: grid; gap: 7px; margin: 0; padding: 0 14px 14px 30px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.card-action { margin-top: auto; }
+.ble-capabilities .capability-card:first-child .function-details { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.06); }
+.ble-capabilities .capability-card:first-child .function-details summary { color: #fff; }
+.ble-capabilities .capability-card:first-child .function-details ul { color: #bbb; }
+.ble-capabilities .capability-card:first-child .step-number { color: #888; }
+.ble-capabilities .capability-card:first-child .primary { color: #202020; background: #fff; }
 .lab-panel { display: grid; grid-template-columns: minmax(220px,.7fr) 1.3fr; gap: 18px 26px; margin-bottom: 16px; padding: 22px; }
 .lab-panel h2 { margin: 7px 0; }
 .lab-panel p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .lab-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .lab-tool { display: grid; gap: 5px; padding: 15px; text-align: left; color: #222; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.65); }
-.lab-tool:hover { color: #fff; background: #202020; }
+.lab-tool summary { position: relative; display: grid; gap: 5px; padding-right: 24px; cursor: pointer; list-style: none; }
+.lab-tool summary::after { content: "+"; position: absolute; top: 0; right: 0; font-size: 17px; }
+.lab-tool[open] summary::after { content: "−"; }
 .lab-tool small { color: #777; font-size: 9px; line-height: 1.35; }
-.lab-tool:hover small { color: #bbb; }
+.lab-tool p { margin: 12px 0; padding-top: 11px; border-top: 1px solid var(--line); }
+.lab-tool button { width: 100%; }
 .safe-preview { grid-column: 1 / -1; padding: 14px 16px; color: #555; border: 1px dashed rgba(20,20,20,.2); border-radius: 14px; background: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; }
 .safe-preview.portal-demo { color: #222; border-style: solid; background: #fff; }
 .safe-preview.portal-demo::before { content: "WIFI DE VISITANTES · DEMO LOCAL"; display: block; margin-bottom: 7px; font-size: 9px; font-weight: 900; letter-spacing: .12em; }
@@ -523,6 +544,7 @@ button:focus-visible { outline-color: #111; }
 @media (max-width: 900px) {
   .capability-grid, .lab-panel { grid-template-columns: 1fr; }
   .lab-tools { grid-template-columns: 1fr; }
+  .function-route { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 980px) {
@@ -549,5 +571,6 @@ button:focus-visible { outline-color: #111; }
   .hero-grid, .analysis-grid, .workspace-grid, .diagnostic-grid { grid-template-columns: 1fr; }
   .sensor-stats, .ble-metrics, .metrics-panel { grid-template-columns: repeat(2, 1fr); }
   .capability-card { min-height: 0; }
+  .capability-card > p { min-height: 0; }
 }
 

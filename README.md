@@ -30,6 +30,7 @@ El ESP-32S no tiene USB nativo. La comunicación pasa por el convertidor USB-UAR
 - Uso local: los resultados no se envían a Internet.
 - Navegación por apartados: Inicio, Resumen, Redes Wi-Fi, Bluetooth y Sistema.
 - Interfaz 0.8 monocromática con navegación lateral en escritorio, navegación compacta en móvil y acciones ordenadas por tarea.
+- Cada herramienta incluye un apartado desplegable con su propósito, datos entregados, límites y orden recomendado de uso.
 - Análisis guiado que ejecuta los módulos de forma secuencial y evita escaneos solapados.
 - Puntuación de exposición, hallazgos priorizados y recomendaciones defensivas.
 - Identificación explícita de análisis parciales cuando un módulo no responde.

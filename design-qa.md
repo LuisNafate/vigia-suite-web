@@ -40,3 +40,5 @@ La nueva portada adopta una dirección editorial oscura basada en el MP4 del Nod
 - El botón Deauth Detector permanece desactivado hasta conectar el sensor, como corresponde.
 - El firmware 0.4 con monitor pasivo de deauth/disassoc compila para ESP32 Dev Module con partición `huge_app`.
 - Las herramientas activas no transmiten tramas, no se asocian a redes y no recolectan credenciales ni contenido de paquetes.
+- Cada función se presenta como una tarjeta numerada con un desplegable nativo, límites explícitos, acción y resultado.
+- Se verificó la apertura de los detalles Wi-Fi, laboratorio controlado y GATT en la vista compacta, sin errores de consola.

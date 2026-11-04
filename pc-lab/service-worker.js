@@ -1,4 +1,4 @@
-const CACHE = 'vigia-suite-v9';
+const CACHE = 'vigia-suite-v10';
 const ASSETS = ['/', '/index.html', '/landing.css', '/landing.js', '/sequence-config.js', '/dashboard.html', '/styles.css', '/app.js', '/manifest.webmanifest', '/icon.svg', '/assets/monochrome-folds.png', '/product-sequence/desktop/frame-0001.webp', '/product-sequence/mobile/frame-0001.webp'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
 self.addEventListener('activate', event => event.waitUntil(
