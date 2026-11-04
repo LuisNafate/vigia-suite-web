@@ -1,8 +1,40 @@
-# Vigía Suite 0.8
+<div align="center">
+  <img src="pc-lab/icon.svg" width="92" alt="Logotipo de Vigía Suite">
+  <h1>Vigía Suite Web</h1>
+  <p><strong>Reconocimiento pasivo y análisis defensivo con ESP32.</strong></p>
+  <p>
+    <a href="https://vigia-suite-web-pc-lab.vercel.app"><img alt="Abrir en Vercel" src="https://img.shields.io/badge/VERCEL-ABRIR%20DEMO-000000?style=for-the-badge&logo=vercel&logoColor=white"></a>
+    <a href="https://github.com/LuisNafate/vigia-suite-web"><img alt="Repositorio web" src="https://img.shields.io/badge/GITHUB-C%C3%93DIGO-181717?style=for-the-badge&logo=github&logoColor=white"></a>
+    <a href="https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta"><img alt="Descargar APK" src="https://img.shields.io/badge/ANDROID-DESCARGAR%20APK-3DDC84?style=for-the-badge&logo=android&logoColor=white"></a>
+  </p>
+  <p>
+    <img alt="Versión 0.8" src="https://img.shields.io/badge/VERSI%C3%93N-0.8-202020?style=flat-square">
+    <img alt="JavaScript" src="https://img.shields.io/badge/JAVASCRIPT-ES2022-F7DF1E?style=flat-square&logo=javascript&logoColor=000000">
+    <img alt="PWA" src="https://img.shields.io/badge/PWA-INSTALABLE-5A0FC8?style=flat-square&logo=pwa&logoColor=white">
+    <img alt="Web Serial" src="https://img.shields.io/badge/WEB%20SERIAL-USB-1679A7?style=flat-square&logo=usb&logoColor=white">
+    <img alt="ESP32" src="https://img.shields.io/badge/ESP32-NODEMCU-E7352C?style=flat-square&logo=espressif&logoColor=white">
+    <img alt="Protocolo VIGIA 2" src="https://img.shields.io/badge/PROTOCOLO-VIGIA%2F2-4B5563?style=flat-square">
+    <img alt="Último commit" src="https://img.shields.io/github/last-commit/LuisNafate/vigia-suite-web?style=flat-square&logo=git&logoColor=white">
+  </p>
+</div>
 
-Suite defensiva Web conectada a un sensor NodeMCU ESP-32S mediante USB. Este repositorio contiene la landing, el laboratorio web, el firmware y las herramientas para preparar el sensor.
+---
+
+## Descripción
+
+Suite defensiva web conectada a un sensor NodeMCU ESP-32S mediante USB. Este repositorio contiene la presentación, el laboratorio web, el firmware y las herramientas para preparar el sensor.
 
 El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hallazgos explicados y recomendaciones. La web conserva hasta 20 resúmenes en el navegador y exporta el informe completo como JSON o CSV.
+
+## Enlaces rápidos
+
+| Recurso | Acceso |
+|---|---|
+| Aplicación web | [Abrir Vigía Suite en Vercel](https://vigia-suite-web-pc-lab.vercel.app) |
+| Laboratorio | [Abrir directamente el dashboard](https://vigia-suite-web-pc-lab.vercel.app/dashboard.html) |
+| Aplicación Android | [Repositorio móvil](https://github.com/LuisNafate/vigia-suite-android) |
+| APK de prueba | [Descargar 0.7.0 Beta](https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta) |
+| Última actividad | [Historial de cambios](https://github.com/LuisNafate/vigia-suite-web/commits/main) |
 
 ## Hardware objetivo
 
