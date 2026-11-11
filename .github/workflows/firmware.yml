@@ -1,0 +1,82 @@
+# Compila el firmware Vigía Sensor con la toolchain fijada y entrega binarios + manifiesto como artefacto.
+# No publica releases ni hace push: un mantenedor revisa el artefacto y lo incorpora (docs/FIRMWARE-RELEASE.md).
+name: Firmware
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'firmware/**'
+      - 'scripts/build_firmware.py'
+      - 'pc-lab/firmware/**'
+      - 'pc-lab/firmware-core.js'
+      - '.github/workflows/firmware.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Leer versiones fijadas
+        id: cfg
+        run: |
+          echo "cli=$(jq -r .toolchain.arduinoCli firmware/build-config.json)" >> "$GITHUB_OUTPUT"
+          echo "core=$(jq -r '.toolchain.core + "@" + .toolchain.coreVersion' firmware/build-config.json)" >> "$GITHUB_OUTPUT"
+          echo "index=$(jq -r .toolchain.indexUrl firmware/build-config.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar arduino-cli verificado (SHA-256 oficial)
+        run: |
+          set -euo pipefail
+          V="${{ steps.cfg.outputs.cli }}"
+          BASE="https://github.com/arduino/arduino-cli/releases/download/v${V}"
+          mkdir -p "$RUNNER_TEMP/arduino-cli" && cd "$RUNNER_TEMP/arduino-cli"
+          curl -fsSLO "$BASE/${V}-checksums.txt"
+          curl -fsSLO "$BASE/arduino-cli_${V}_Linux_64bit.tar.gz"
+          grep " arduino-cli_${V}_Linux_64bit.tar.gz\$" "${V}-checksums.txt" | sha256sum --check --strict
+          tar xzf "arduino-cli_${V}_Linux_64bit.tar.gz" arduino-cli
+          echo "$RUNNER_TEMP/arduino-cli" >> "$GITHUB_PATH"
+
+      - name: Configurar núcleo ESP32 (índice estable de Espressif)
+        run: |
+          set -euo pipefail
+          CFG="$RUNNER_TEMP/arduino-cli.yaml"
+          cat > "$CFG" <<EOF
+          board_manager:
+            additional_urls: ["${{ steps.cfg.outputs.index }}"]
+            enable_unsafe_install: false
+          directories:
+            data: $RUNNER_TEMP/arduino15
+            downloads: $RUNNER_TEMP/arduino15/staging
+            user: $RUNNER_TEMP/sketchbook
+          metrics:
+            enabled: false
+          EOF
+          echo "ARDUINO_CLI_CONFIG=$CFG" >> "$GITHUB_ENV"
+          echo "ARDUINO_CLI=$RUNNER_TEMP/arduino-cli/arduino-cli" >> "$GITHUB_ENV"
+          arduino-cli --config-file "$CFG" core update-index
+          arduino-cli --config-file "$CFG" core install "${{ steps.cfg.outputs.core }}"
+
+      - name: Compilar y generar manifiesto
+        run: python3 scripts/build_firmware.py --builder github-actions --force
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Pruebas y verificación de integridad
+        run: |
+          npm run check
+          npm test
+          node scripts/verify-firmware.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vigia-firmware
+          path: pc-lab/firmware/
+          if-no-files-found: error
+          retention-days: 30

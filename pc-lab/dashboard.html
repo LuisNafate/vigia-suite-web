@@ -25,6 +25,7 @@
       <button class="tab" data-view-target="wifi"><strong>Wi-Fi Recon <span id="wifiBadge">0</span></strong><small>Inventario y defensa</small></button>
       <button class="tab" data-view-target="bluetooth"><strong>Bluetooth <span id="bleBadge">0</span></strong><small>Privacidad y cercanía</small></button>
       <button class="tab" data-view-target="diagnostico"><strong>Sistema</strong><small>Sensor y firmware</small></button>
+      <button class="tab" data-view-target="instalar"><strong>Preparar ESP32</strong><small>Instalar o actualizar firmware</small></button>
       <div class="side-note"><span>VIGIA/2</span><strong>Procesamiento local</strong><small>Los datos permanecen en este dispositivo.</small></div>
     </nav>
 
@@ -50,6 +51,7 @@
             <button class="secondary" id="disconnectButton" disabled>Desconectar</button>
             <button class="secondary" id="installButton" hidden>Instalar Web App</button>
           </div>
+          <p class="setup-hint">¿ESP32 nuevo o sin Vigía? <button class="link-button" data-view-target="instalar">Preparar el sensor desde el navegador</button></p>
           <div class="provision-progress" id="provisionProgress" hidden><span class="spinner"></span><span id="provisionText">Preparando firmware…</span></div>
         </article>
         <article class="panel risk-panel">
@@ -143,7 +145,7 @@
     </section>
 
     <section class="view" data-view="diagnostico">
-      <div class="section-heading"><div><p class="eyebrow">SENSOR Y MANTENIMIENTO</p><h2>Sistema</h2><p class="section-description">Usa estas funciones solo para revisar el sensor o reinstalar su firmware.</p></div><div class="button-row"><button class="provision" id="flashButton">Reinstalar firmware</button><button class="ghost" id="clearButton">Limpiar consola</button></div></div>
+      <div class="section-heading"><div><p class="eyebrow">SENSOR Y MANTENIMIENTO</p><h2>Sistema</h2><p class="section-description">Usa estas funciones para revisar el sensor. Para instalar o actualizar el firmware usa <button class="link-button" data-view-target="instalar">Preparar ESP32</button>.</p></div><div class="button-row"><button class="ghost" id="flashButton" title="Compila e instala con Arduino CLI mediante INICIAR-VIGIA.bat (solo para desarrollo)">Helper local (desarrollo)</button><button class="ghost" id="clearButton">Limpiar consola</button></div></div>
       <div class="module-grid diagnostic-actions">
         <button class="module" data-command="PING" disabled><span class="module-icon">⌁</span><strong>Validar enlace</strong><small>Comprueba la respuesta del firmware</small></button>
         <button class="module" data-command="INFO" disabled><span class="module-icon">◈</span><strong>Identidad</strong><small>Placa, chip e identificador</small></button>
@@ -157,8 +159,101 @@
       </div>
     </section>
 
+    <section class="view" data-view="instalar" aria-labelledby="fwTitle">
+      <div class="section-heading"><div><p class="eyebrow">PREPARACIÓN DEL SENSOR · SIN ARDUINO IDE</p><h2 id="fwTitle">Instalar o actualizar Vigía en tu ESP32</h2><p class="section-description">El navegador comprueba la placa, verifica la integridad del firmware oficial y lo instala por USB. Si la placa ya tiene Vigía, puedes usarla directamente.</p></div></div>
+      <p class="fw-support" id="fwSupport" role="status">Comprobando compatibilidad del navegador…</p>
+
+      <ol class="journey fw-steps" aria-label="Pasos de preparación">
+        <li class="active" data-fw-step="port"><span>1</span><div><strong>Elige el puerto</strong><small>Selección explícita</small></div></li>
+        <li data-fw-step="check"><span>2</span><div><strong>Comprueba</strong><small>Firmware actual</small></div></li>
+        <li data-fw-step="install"><span>3</span><div><strong>Instala</strong><small>Con tu autorización</small></div></li>
+        <li data-fw-step="verify"><span>4</span><div><strong>Verifica</strong><small>Arranque VIGIA/2</small></div></li>
+      </ol>
+
+      <div class="fw-grid">
+        <article class="panel fw-panel">
+          <p class="overline">DISPOSITIVO</p>
+          <h3>Tu ESP32</h3>
+          <dl class="fw-facts">
+            <div><dt>Puerto</dt><dd id="fwPortLabel">Sin seleccionar</dd></div>
+            <div><dt>Puente USB</dt><dd id="fwUsbChip">—</dd></div>
+            <div><dt>Firmware detectado</dt><dd id="fwDeviceFirmware">—</dd></div>
+            <div><dt>Chip</dt><dd id="fwChipLabel">Sin identificar</dd></div>
+          </dl>
+          <output class="fw-state" id="fwDeviceState" data-state="idle">Conecta el ESP32 con un cable USB de datos y pulsa «Elegir puerto».</output>
+          <div class="button-row">
+            <button class="primary" id="fwSelectPort">Elegir puerto USB</button>
+            <button class="secondary" id="fwProbe" disabled>Comprobar de nuevo</button>
+            <button class="primary" id="fwUseButton" hidden>Usar Vigía Suite</button>
+            <button class="ghost" id="fwReinstallButton" hidden>Reinstalar o cambiar versión</button>
+          </div>
+        </article>
+
+        <article class="panel fw-panel">
+          <p class="overline">FIRMWARE OFICIAL</p>
+          <h3 id="fwReleaseTitle">Cargando catálogo…</h3>
+          <label class="fw-select-label" for="fwReleaseSelect">Versión</label>
+          <select id="fwReleaseSelect" disabled></select>
+          <dl class="fw-facts">
+            <div><dt>Chip compatible</dt><dd id="fwReleaseChip">—</dd></div>
+            <div><dt>Protocolo</dt><dd id="fwReleaseProtocol">—</dd></div>
+            <div><dt>Compilado con</dt><dd id="fwReleaseBuild">—</dd></div>
+            <div><dt>Tamaño</dt><dd id="fwReleaseSize">—</dd></div>
+          </dl>
+          <details class="function-details"><summary>Archivos, direcciones y SHA-256</summary><ul id="fwReleaseFiles"><li>Sin datos.</li></ul></details>
+          <output class="fw-state" id="fwIntegrity" data-state="idle">La integridad se comprueba antes de instalar.</output>
+        </article>
+      </div>
+
+      <article class="panel fw-confirm" id="fwConfirmPanel" hidden>
+        <div>
+          <p class="overline">AUTORIZACIÓN REQUERIDA</p>
+          <h3>Se sobrescribirá el programa del ESP32</h3>
+          <p id="fwConfirmSummary">—</p>
+          <p class="fw-note">Se escriben únicamente las regiones del firmware (bootloader, tabla de particiones, selector de arranque y aplicación). No se borra la flash completa. El chip se identificará antes de escribir: si no es un ESP32 compatible, la instalación se cancela.</p>
+          <label class="fw-consent"><input type="checkbox" id="fwConsent"> Entiendo que el programa actual de esta placa será reemplazado por Vigía Sensor.</label>
+        </div>
+        <div class="button-row">
+          <button class="provision" id="fwInstallButton" disabled>Instalar firmware</button>
+          <button class="ghost" id="fwCancelButton">Cancelar</button>
+        </div>
+      </article>
+
+      <article class="panel fw-progress-panel" id="fwProgressPanel" hidden>
+        <p class="overline">PROGRESO</p>
+        <h3 id="fwProgressTitle">Preparando…</h3>
+        <progress id="fwProgress" max="100" value="0"></progress>
+        <p class="fw-note" id="fwProgressText">No desconectes el cable ni cierres esta pestaña.</p>
+        <div class="button-row"><button class="secondary" id="fwRetryButton" hidden>Reintentar</button></div>
+      </article>
+
+      <div class="fw-grid">
+        <details class="panel fw-help" id="fwDriverHelp">
+          <summary><strong>¿Tu placa no aparece en la lista de puertos?</strong><small>Controlador USB de Windows</small></summary>
+          <div id="fwDriverHint"></div>
+          <ol class="fw-help-list">
+            <li>Usa un cable USB de <strong>datos</strong> (algunos cables solo cargan).</li>
+            <li>Mira el chip pequeño junto al conector USB de la placa: suele decir <strong>CP2102</strong> (Silicon Labs) o <strong>CH340</strong> (WCH).</li>
+            <li>Instala el controlador <strong>solo desde el fabricante</strong>:
+              <ul>
+                <li>CP210x: <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank" rel="noopener noreferrer">Silicon Labs · USB to UART Bridge VCP Drivers</a> («CP210x Universal Windows Driver»).</li>
+                <li>CH340/CH341: <a href="https://www.wch-ic.com/downloads/CH341SER_EXE.html" target="_blank" rel="noopener noreferrer">WCH · CH341SER</a>.</li>
+              </ul>
+            </li>
+            <li>En el Administrador de dispositivos, un aviso «código 28» indica que falta el controlador. Al instalarlo aparecerá un puerto <strong>COM</strong>.</li>
+            <li>Cierra el Monitor Serie de Arduino u otras pestañas que usen el puerto y vuelve a pulsar «Elegir puerto USB».</li>
+          </ol>
+        </details>
+        <details class="panel fw-help">
+          <summary><strong>Registro técnico</strong><small>Mensajes del instalador</small></summary>
+          <pre class="fw-log" id="fwLog">[instalador] Listo.</pre>
+        </details>
+      </div>
+    </section>
+
     <footer><span>Vigía Suite MVP 0.8</span><span>Recon pasivo y análisis defensivo en entornos autorizados</span><a href="https://github.com/LuisNafate/vigia-suite-web">Código Web ↗</a><a href="https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta">Android APK ↗</a></footer>
   </main>
   <script src="app.js"></script>
+  <script type="module" src="installer.js"></script>
 </body>
 </html>

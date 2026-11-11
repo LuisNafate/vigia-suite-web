@@ -52,3 +52,7 @@ Desktop.ini
 *.zip
 *.7z
 
+
+# Firmware oficial publicado para el instalador web (se versiona a propósito).
+!pc-lab/firmware/
+!pc-lab/firmware/**/*.bin
