@@ -1,0 +1,14 @@
+{
+  "name": "vigia-suite-web",
+  "private": true,
+  "type": "module",
+  "description": "Vigía Suite Web: herramientas de prueba y verificación (sin dependencias de ejecución).",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "check": "node --check pc-lab/app.js && node --check pc-lab/installer.js && node --check pc-lab/firmware-core.js && node --check pc-lab/service-worker.js",
+    "verify:firmware": "node scripts/verify-firmware.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

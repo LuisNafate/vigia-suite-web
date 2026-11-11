@@ -6,3 +6,5 @@
 *.apk binary
 *.bin binary
 *.elf binary
+# Dependencias de terceros copiadas sin modificar: conservar bytes exactos (SHA-256 en VENDOR.json).
+pc-lab/vendor/** -text

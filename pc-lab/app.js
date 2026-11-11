@@ -33,6 +33,7 @@ const elements = {
 let port;
 let reader;
 let writer;
+let readLoopPromise;
 let keepReading = false;
 let lineBuffer = '';
 let networks = [];
@@ -390,13 +391,15 @@ async function readLoop() {
 async function openPort(selectedPort) {
   port = selectedPort;
   await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+  lineBuffer = '';
   writer = port.writable.getWriter(); setConnected(true); elements.port.textContent = 'Puerto autorizado';
   elements.status.textContent = 'Puerto abierto. Validando firmware…'; log('Puerto serial abierto a 115200 8N1', 'web');
-  readLoop(); await new Promise(resolve => setTimeout(resolve, 250)); await sendCommand('PING');
+  readLoopPromise = readLoop(); await new Promise(resolve => setTimeout(resolve, 250)); await sendCommand('PING');
 }
 
 async function connect(selectedPort) {
   if (!('serial' in navigator)) { elements.status.textContent = 'Web Serial requiere Edge o Chrome en una computadora.'; return; }
+  if (window.VigiaInstaller?.isBusy?.()) { elements.status.textContent = 'El instalador de firmware está usando el puerto. Espera a que termine.'; return; }
   try {
     const chosen = selectedPort || await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x10c4 }, { usbVendorId: 0x1a86 }, { usbVendorId: 0x303a }] });
     await openPort(chosen);
@@ -404,8 +407,12 @@ async function connect(selectedPort) {
 }
 
 async function disconnect(writeLog = true) {
-  keepReading = false; try { await reader?.cancel(); } catch {} try { writer?.releaseLock(); } catch {} writer = undefined;
-  try { await port?.close(); } catch {} port = undefined; setConnected(false); elements.port.textContent = detectedPort || 'Buscando sensor';
+  keepReading = false; try { await reader?.cancel(); } catch {}
+  // Espera a que readLoop libere el lector; si no, port.close() falla y el puerto queda abierto.
+  try { await readLoopPromise; } catch {} readLoopPromise = undefined;
+  try { writer?.releaseLock(); } catch {} writer = undefined;
+  try { await port?.close(); } catch (error) { log(`No se pudo cerrar el puerto: ${error.message}`, 'error'); }
+  port = undefined; setConnected(false); elements.port.textContent = detectedPort || 'Buscando sensor';
   elements.status.textContent = 'Sensor desconectado.'; if (writeLog) log('Puerto cerrado', 'web');
 }
 
@@ -538,7 +545,7 @@ async function flashFirmware() {
   try {
     const response = await fetch('/api/flash', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ port: detectedPort }) });
     const data = await response.json(); if (!response.ok || !data.ok) throw new Error(data.message || 'No se pudo cargar el firmware');
-    elements.status.textContent = 'Firmware instalado. Ya puedes conectar el puerto.'; elements.protocol.textContent = 'VIGIA/1 instalado'; log(data.message, 'sistema');
+    elements.status.textContent = 'Firmware instalado con el helper local. Conecta el puerto para verificarlo.'; elements.protocol.textContent = 'Pendiente de verificar'; log(data.message, 'sistema');
   } catch (error) { elements.status.textContent = `Falló la preparación: ${error.message}`; log(error.message, 'error'); }
   finally { isFlashing = false; elements.progress.hidden = true; elements.flash.disabled = false; elements.connect.disabled = false; }
 }
@@ -575,15 +582,28 @@ elements.portalPreview?.addEventListener('click', () => showLabResult('portal'))
 elements.gattProfile?.addEventListener('click', analyzeGattProfiles);
 elements.trackerDetector?.addEventListener('click', detectTrackerPatterns);
 elements.modules.forEach(button => button.addEventListener('click', async () => { if (!analysisRunning) await sendCommand(button.dataset.command); }));
-navigator.serial?.addEventListener('disconnect', () => disconnect());
+navigator.serial?.addEventListener('disconnect', event => { if (!port || event.target === port) disconnect(); });
 window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); installPrompt = event; elements.install.hidden = false; });
 elements.install.addEventListener('click', async () => { if (installPrompt) { await installPrompt.prompt(); installPrompt = undefined; elements.install.hidden = true; } });
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js');
 setConnected(false); renderNetworks(); renderBleDevices(); renderAnalysis(); loadHistory(); refreshDeviceStatus();
 setInterval(() => { if (!port) refreshDeviceStatus(); }, 3000);
+// API mínima para el instalador de firmware (installer.js). No expone comandos arbitrarios.
+window.VigiaApp = Object.freeze({
+  isConnected: () => Boolean(writer),
+  isBusy: () => analysisRunning || isFlashing,
+  currentPort: () => port,
+  disconnect: () => disconnect(),
+  connectPort: selectedPort => connect(selectedPort),
+  showView: name => showView(name),
+  log: (message, kind = 'instalador') => log(message, kind),
+});
+
 (async () => {
   if (!navigator.serial) return;
   const grantedPorts = await navigator.serial.getPorts();
-  if (grantedPorts.length) { try { await connect(grantedPorts[0]); } catch {} }
+  // Sólo se reconecta automáticamente si hay un único puerto ya autorizado; con varios, el usuario elige.
+  if (grantedPorts.length === 1) { try { await connect(grantedPorts[0]); } catch {} }
+  else if (grantedPorts.length > 1) elements.status.textContent = 'Hay varios puertos autorizados. Pulsa «Conectar sensor» y elige uno.';
 })();

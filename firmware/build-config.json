@@ -1,0 +1,18 @@
+{
+  "schema": "vigia-firmware-build/1",
+  "sketch": "firmware/arduino/VigiaSensor",
+  "fqbn": "esp32:esp32:esp32:PartitionScheme=huge_app",
+  "chip": "ESP32",
+  "boards": ["NodeMCU-32S", "NodeMCU ESP-32S", "ESP32 Dev Module (ESP32-WROOM-32)"],
+  "minFlashSize": "4MB",
+  "protocol": 2,
+  "toolchain": {
+    "arduinoCli": "1.5.1",
+    "core": "esp32:esp32",
+    "coreVersion": "3.3.12",
+    "coreMinimum": "3.3.7",
+    "indexUrl": "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+  },
+  "output": "pc-lab/firmware",
+  "notes": "coreMinimum se deriva de la API BLE usada por el sketch (BLEDevice::init -> bool y BLEScan::isScanning sin guarda NimBLE desde 3.3.7)."
+}

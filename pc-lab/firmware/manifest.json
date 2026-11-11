@@ -1,0 +1,73 @@
+{
+  "schema": "vigia-firmware-manifest/1",
+  "latest": "0.4.0-arduino",
+  "releases": [
+    {
+      "version": "0.4.0-arduino",
+      "channel": "stable",
+      "protocol": 2,
+      "chip": "ESP32",
+      "boards": [
+        "NodeMCU-32S",
+        "NodeMCU ESP-32S",
+        "ESP32 Dev Module (ESP32-WROOM-32)"
+      ],
+      "minFlashSize": "4MB",
+      "releasedAt": "2026-11-11T14:39:52+00:00",
+      "flash": {
+        "mode": "keep",
+        "freq": "keep",
+        "size": "keep",
+        "buildMode": "dio",
+        "buildFreq": "80m",
+        "buildSize": "4MB",
+        "eraseAll": false
+      },
+      "build": {
+        "arduinoCli": "1.5.1",
+        "core": "esp32:esp32@3.3.12",
+        "fqbn": "esp32:esp32:esp32:PartitionScheme=huge_app",
+        "partitions": "huge_app",
+        "sketchSha256": "dd5a8da218df1d183c90484fa971103f6076b5be70b305a345a96d0ae9ff80d6",
+        "builder": "local",
+        "host": "Windows AMD64",
+        "commit": "07c700edefc3d5efad4da9104f6cb3d268fc8fb4",
+        "firmwareSourceDirty": false
+      },
+      "files": [
+        {
+          "type": "bootloader",
+          "path": "0.4.0-arduino/bootloader.bin",
+          "offset": 4096,
+          "offsetHex": "0x1000",
+          "size": 24992,
+          "sha256": "47bbbfca119fe87190f63a67af9d85adff6433bcf3812ec92a9b9c9416a53ad1"
+        },
+        {
+          "type": "partition-table",
+          "path": "0.4.0-arduino/partitions.bin",
+          "offset": 32768,
+          "offsetHex": "0x8000",
+          "size": 3072,
+          "sha256": "aaae2888c5a6a348004b5b436f47abb25ae32e72d9003902955a998eda723edd"
+        },
+        {
+          "type": "otadata",
+          "path": "0.4.0-arduino/boot_app0.bin",
+          "offset": 57344,
+          "offsetHex": "0xe000",
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "type": "app",
+          "path": "0.4.0-arduino/vigia-sensor.bin",
+          "offset": 65536,
+          "offsetHex": "0x10000",
+          "size": 1623280,
+          "sha256": "52401aeea2a2dfc6d6daf31fba7239bbe061d7df00a77e2ce47309c82a9954ba"
+        }
+      ]
+    }
+  ]
+}

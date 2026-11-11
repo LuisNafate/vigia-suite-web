@@ -67,14 +67,35 @@ El ESP-32S no tiene USB nativo. La comunicación pasa por el convertidor USB-UAR
 - Puntuación de exposición, hallazgos priorizados y recomendaciones defensivas.
 - Identificación explícita de análisis parciales cuando un módulo no responde.
 
+## Preparar el ESP32 desde el navegador
+
+No necesitas Arduino IDE, Arduino CLI ni compiladores. Solo Chrome o Edge en una computadora y, en Windows, el controlador USB de tu placa.
+
+1. Abre el laboratorio (`dashboard.html`) y entra en **Preparar ESP32**.
+2. Pulsa **Elegir puerto USB** y selecciona tu placa. La web nunca elige un puerto por su cuenta.
+3. Vigía comprueba qué tiene la placa:
+   - **Vigía compatible:** puedes usarla directamente con **Usar Vigía Suite**.
+   - **Placa nueva, firmware desconocido o incompatible:** se ofrece la instalación.
+4. Marca la casilla de confirmación y pulsa **Instalar firmware**. Antes de escribir, la web:
+   - verifica el SHA-256 de cada archivo,
+   - identifica el chip,
+   - cancela si no es un ESP32 compatible.
+5. Al terminar, el sensor se reinicia. Solo verás "instalación verificada" si responde con `ready` y el protocolo VIGIA/2.
+
+Si tu placa no aparece en la lista de puertos, la sección incluye una guía con enlaces a los controladores oficiales de Silicon Labs (CP210x) y WCH (CH340).
+
+El firmware oficial se publica en `pc-lab/firmware/` con su `manifest.json`. Para generar una versión nueva, consulta [docs/FIRMWARE-RELEASE.md](docs/FIRMWARE-RELEASE.md).
+
 ## Probar la versión web
 
 1. Conecta el NodeMCU ESP-32S por USB y cierra el Monitor Serie de Arduino.
-2. Haz doble clic en `INICIAR-VIGIA.bat`.
+2. Abre la versión publicada o, en local, haz doble clic en `INICIAR-VIGIA.bat`.
 3. La ruta `/` muestra la presentación cinematográfica del proyecto; desplázate para recorrer el despiece del ESP32.
 4. Pulsa **Abrir laboratorio** para entrar en `dashboard.html`.
-5. En Edge pulsa **Preparar ESP32**. El asistente detecta CP210x/CH340, compila e instala el firmware.
-6. Pulsa **Conectar ESP32**, autoriza el puerto y ejecuta los módulos de enlace, identidad, diagnóstico, Wi-Fi y Bluetooth.
+5. Si la placa todavía no tiene Vigía, usa **Preparar ESP32**. El helper local de **Sistema → Helper local (desarrollo)** sigue disponible solo para desarrolladores.
+6. Pulsa **Conectar sensor**, autoriza el puerto y ejecuta los módulos de enlace, identidad, diagnóstico, Wi-Fi y Bluetooth.
+
+Pruebas sin hardware: `npm test` (Node 20 o posterior, sin dependencias).
 
 La portada usa 192 cuadros WebP del MP4 original: 1280×720 para escritorio y 768×432 para móvil. El desplazamiento controla el cuadro mostrado y funciona en ambos sentidos. Para regenerar las secuencias usa `scripts/extract-product-frames.ps1`.
 
