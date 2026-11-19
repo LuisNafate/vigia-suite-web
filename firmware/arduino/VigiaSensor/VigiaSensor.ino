@@ -3,12 +3,13 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 #include <esp_wifi.h>
+#include <esp_mac.h>
 
 static const uint32_t SERIAL_BAUD = 115200;
 static const uint8_t MAX_NETWORKS = 32;
 static const uint8_t MAX_BLE_DEVICES = 32;
 static const uint8_t BLE_SCAN_SECONDS = 5;
-static const char *FIRMWARE_VERSION = "0.4.0-arduino";
+static const char *FIRMWARE_VERSION = "0.5.0-arduino";
 
 String commandBuffer;
 BLEScan *bleScanner = nullptr;
@@ -107,13 +108,18 @@ bool initializeBle() {
 }
 
 void sendIdentity() {
-  uint64_t chipId = ESP.getEfuseMac();
-  char id[18];
-  snprintf(id, sizeof(id), "%04X%08X", (uint16_t)(chipId >> 32), (uint32_t)chipId);
+  // esp_efuse_mac_get_default entrega la MAC base de fabrica en orden de red.
+  // ESP.getEfuseMac() la devuelve como entero y al imprimirla quedaba con los
+  // bytes invertidos: eso publicaban en "mac" la 0.4.0 y las versiones anteriores.
+  uint8_t mac[6] = {0};
+  esp_efuse_mac_get_default(mac);
+  char macText[18];
+  snprintf(macText, sizeof(macText), "%02X:%02X:%02X:%02X:%02X:%02X",
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   Serial.printf(
     "{\"type\":\"identity\",\"protocol\":2,\"board\":\"nodemcu-esp32s\","
     "\"chip\":\"ESP32\",\"mac\":\"%s\",\"wifi\":true,\"ble\":true}\n",
-    id
+    macText
   );
 }
 
