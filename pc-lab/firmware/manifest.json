@@ -1,7 +1,74 @@
 {
   "schema": "vigia-firmware-manifest/1",
-  "latest": "0.4.0-arduino",
+  "latest": "0.5.0-arduino",
   "releases": [
+    {
+      "version": "0.5.0-arduino",
+      "channel": "stable",
+      "protocol": 2,
+      "chip": "ESP32",
+      "boards": [
+        "NodeMCU-32S",
+        "NodeMCU ESP-32S",
+        "ESP32 Dev Module (ESP32-WROOM-32)"
+      ],
+      "minFlashSize": "4MB",
+      "releasedAt": "2026-11-19T14:54:20+00:00",
+      "flash": {
+        "mode": "keep",
+        "freq": "keep",
+        "size": "keep",
+        "buildMode": "dio",
+        "buildFreq": "80m",
+        "buildSize": "4MB",
+        "eraseAll": false
+      },
+      "build": {
+        "arduinoCli": "1.5.1",
+        "core": "esp32:esp32@3.3.12",
+        "fqbn": "esp32:esp32:esp32:PartitionScheme=huge_app",
+        "partitions": "huge_app",
+        "sketchSha256": "ce0799430c4d1fffaf8bbcd1d483ba2bb564c8b76a4f337323eeed2c8bc96fcc",
+        "builder": "local",
+        "host": "Windows AMD64",
+        "commit": "e0c7176e6875c3e85f667755ce1360c285509cef",
+        "firmwareSourceDirty": false
+      },
+      "files": [
+        {
+          "type": "bootloader",
+          "path": "0.5.0-arduino/bootloader.bin",
+          "offset": 4096,
+          "offsetHex": "0x1000",
+          "size": 24992,
+          "sha256": "47bbbfca119fe87190f63a67af9d85adff6433bcf3812ec92a9b9c9416a53ad1"
+        },
+        {
+          "type": "partition-table",
+          "path": "0.5.0-arduino/partitions.bin",
+          "offset": 32768,
+          "offsetHex": "0x8000",
+          "size": 3072,
+          "sha256": "aaae2888c5a6a348004b5b436f47abb25ae32e72d9003902955a998eda723edd"
+        },
+        {
+          "type": "otadata",
+          "path": "0.5.0-arduino/boot_app0.bin",
+          "offset": 57344,
+          "offsetHex": "0xe000",
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "type": "app",
+          "path": "0.5.0-arduino/vigia-sensor.bin",
+          "offset": 65536,
+          "offsetHex": "0x10000",
+          "size": 1623232,
+          "sha256": "491655eedc50cd670b211827ac0546d4b0184caeef076f4c76d759d0bd2d1fa1"
+        }
+      ]
+    },
     {
       "version": "0.4.0-arduino",
       "channel": "stable",
