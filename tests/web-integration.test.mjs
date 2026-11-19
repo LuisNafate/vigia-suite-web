@@ -74,3 +74,17 @@ test('el firmware publicado coincide con su manifiesto', async () => {
   const result = await verifyPublishedFirmware();
   assert.ok(result.ok, result.messages.join('\n'));
 });
+
+test('macLabel muestra la MAC real tanto del firmware nuevo como del antiguo', async () => {
+  const app = await read('pc-lab/app.js');
+  const source = app.match(/function macLabel\(value\) \{[\s\S]*?^\}/m)[0];
+  const macLabel = new Function(`${source}; return macLabel;`)();
+  // 0.5.0: ya llega en notacion estandar.
+  assert.equal(macLabel('04:B2:47:82:60:1C'), '04:B2:47:82:60:1C');
+  assert.equal(macLabel('04:b2:47:82:60:1c'), '04:B2:47:82:60:1C');
+  // <=0.4.0: 12 hex con los bytes invertidos.
+  assert.equal(macLabel('1C608247B204'), '04:B2:47:82:60:1C');
+  // Valores vacios o inesperados se dejan pasar sin inventar nada.
+  assert.equal(macLabel(undefined), '');
+  assert.equal(macLabel('no-aplica'), 'no-aplica');
+});

@@ -107,6 +107,15 @@ function authLabel(value) {
   return ({ 0: 'Abierta', 1: 'WEP', 2: 'WPA-PSK', 3: 'WPA2-PSK', 4: 'WPA/WPA2', 5: 'WPA2 Enterprise', 6: 'WPA3-PSK', 7: 'WPA2/WPA3', 8: 'WAPI' })[value] ?? `Modo ${value}`;
 }
 
+// El firmware 0.5.0 publica la MAC de fabrica en notacion estandar. Las versiones
+// 0.4.0 y anteriores enviaban el mismo valor como entero, cuyos 6 bytes quedan
+// invertidos al imprimirlo; se reordenan para no mostrar una MAC falsa.
+function macLabel(value) {
+  const text = String(value ?? '').trim();
+  if (text.includes(':')) return text.toUpperCase();
+  if (!/^[0-9a-fA-F]{12}$/.test(text)) return text;
+  return text.toUpperCase().match(/../g).reverse().join(':');
+}
 function signalClass(rssi) { return rssi >= -60 ? 'signal-good' : rssi >= -75 ? 'signal-mid' : 'signal-low'; }
 function proximityLabel(rssi) { return rssi >= -55 ? 'Muy cerca' : rssi >= -65 ? 'Cerca' : rssi >= -80 ? 'Media' : 'Lejana'; }
 function addressTypeLabel(type) {
@@ -322,8 +331,8 @@ function handleLine(rawLine) {
     if (event.type === 'ready') { elements.detailFirmware.textContent = event.firmware; elements.status.textContent = `Firmware ${event.firmware} listo.`; }
     if (event.type === 'pong') elements.status.textContent = 'Enlace validado correctamente.';
     if (event.type === 'identity') {
-      identity = event; elements.detailBoard.textContent = event.board; elements.detailChip.textContent = event.chip; elements.detailMac.textContent = event.mac;
-      elements.status.textContent = `${event.board} · ${event.chip} · ${event.mac}`;
+      identity = event; elements.detailBoard.textContent = event.board; elements.detailChip.textContent = event.chip; elements.detailMac.textContent = macLabel(event.mac) || '—';
+      elements.status.textContent = `${event.board} · ${event.chip} · ${macLabel(event.mac)}`;
     }
     if (event.type === 'status') {
       sensorStatus = event; elements.detailHeap.textContent = `${event.heap_free.toLocaleString('es-MX')} bytes`;
@@ -493,7 +502,7 @@ function renderAnalysis() {
   renderModuleAdvice();
   currentReport = {
     schema: 'vigia-suite-report/1', createdAt: new Date().toISOString(), score, level,
-    sensor: { board: identity.board || 'NodeMCU ESP-32S', chip: identity.chip || 'ESP32', mac: identity.mac || '', firmware: elements.detailFirmware.textContent, protocol: elements.protocol.textContent },
+    sensor: { board: identity.board || 'NodeMCU ESP-32S', chip: identity.chip || 'ESP32', mac: macLabel(identity.mac), firmware: elements.detailFirmware.textContent, protocol: elements.protocol.textContent },
     wifi: { total, open: open.length, legacy: weak.length, hidden: hidden.length, busiestChannel: busiest ? Number(busiest[0]) : null, busiestCount: busiest ? Number(busiest[1]) : 0 },
     bluetooth: { total: bleDevices.length, nearby: nearbyBle.length, connectable: connectableBle.length, stableNearby: stableNearbyBle.length, scanFailed: bleScanFailed },
     wifiNetworks: networks.map(item => ({ ...item })), bleDevices: bleDevices.map(item => ({ ...item })),
