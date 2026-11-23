@@ -173,6 +173,11 @@ test('flujo completo con sensor simulado: VIGIA/2, puntuación sin cambios y eva
     assert.equal(await page.evaluate(`document.querySelector('#analysisLevel').textContent`), 'Riesgo medio');
     assert.equal(await page.evaluate(`document.querySelector('#analysisStage').textContent`), 'Análisis finalizado y guardado localmente.');
     assert.equal(await page.evaluate(`document.querySelector('#metricNetworks').textContent`), '3');
+    // Una red por canal: ni hallazgo de riesgo ni consejo de congestión (antes salía «Canal 1 concentra 1 redes»).
+    const advice = await page.evaluate(`[document.querySelector('#findingsList').textContent, document.querySelector('#wifiAdvice').textContent, document.querySelector('#recommendationsList').textContent]`);
+    assert.doesNotMatch(advice[0], /Canal \S+ concentra/);
+    assert.doesNotMatch(advice[1], /Optimización: canal|congestionado/);
+    assert.match(advice[2], /Ningún canal reúne 4 o más redes/);
     await page.waitFor(`document.querySelector('#historyViewCounter').textContent === '1 evaluación'`);
     await page.evaluate(`document.querySelector('[data-history-open]').click()`);
     await page.waitFor(`!document.querySelector('#historyDetail').hidden`);

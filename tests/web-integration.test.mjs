@@ -144,9 +144,11 @@ test('el historial no envía datos fuera del navegador', async () => {
 test('la puntuación de app.js no cambió con el historial', async () => {
   const app = await read('pc-lab/app.js');
   const source = app.match(/let score = 0;[\s\S]*?score = Math\.min\(100, score\);/)[0];
-  const compute = new Function('open', 'strongOpen', 'weak', 'total', 'busiest', 'stableNearbyBle', `${source}; return score;`);
+  // busiest es { channel, count } (busiestChannel); el umbral de 12 redes sigue siendo el de la fórmula.
+  assert.match(app, /const CONGESTION_SCORE_NETWORKS = 12;/);
+  const compute = new Function('open', 'strongOpen', 'weak', 'total', 'busiest', 'stableNearbyBle', `const CONGESTION_SCORE_NETWORKS = 12; ${source}; return score;`);
   const many = n => Array.from({ length: n }, () => ({ connectable: true }));
-  assert.equal(compute(many(2), many(1), many(1), 8, ['6', 3], many(0)), 2 * 3 + 5 + 12 + 10);
-  assert.equal(compute(many(20), many(10), many(5), 30, ['6', 12], many(9)), 100);
-  assert.equal(compute([], [], [], 4, ['1', 13], many(3)), 5 + 6);
+  assert.equal(compute(many(2), many(1), many(1), 8, { channel: 6, count: 3 }, many(0)), 2 * 3 + 5 + 12 + 10);
+  assert.equal(compute(many(20), many(10), many(5), 30, { channel: 6, count: 12 }, many(9)), 100);
+  assert.equal(compute([], [], [], 4, { channel: 1, count: 13 }, many(3)), 5 + 6);
 });

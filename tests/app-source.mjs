@@ -23,5 +23,14 @@ export async function loadFieldFilter() {
 export async function loadScoring() {
   const app = await appSource();
   const source = pick(app, /const total = networks\.length;[\s\S]*?const level = [^\n]*/);
-  return new Function('networks', 'bleDevices', `${source}; return { score, level };`);
+  return new Function('networks', 'bleDevices', `${channelSource(app)}\n${source}; return { score, level };`);
+}
+
+const channelSource = app => [/const CONGESTION_SCORE_NETWORKS = .*;/, /const CHANNEL_ADVICE_NETWORKS = .*;/,
+  /function busiestChannel\(list\) \{[\s\S]*?^\}/m, /function channelNotices\(busiest\) \{[\s\S]*?^\}/m].map(pattern => pick(app, pattern)).join('\n');
+
+/** busiestChannel() y channelNotices(): umbrales de canal de la puntuación, los hallazgos y los consejos. */
+export async function loadChannelNotices() {
+  const app = await appSource();
+  return new Function(`${channelSource(app)}; return { CONGESTION_SCORE_NETWORKS, CHANNEL_ADVICE_NETWORKS, busiestChannel, channelNotices };`)();
 }

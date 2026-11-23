@@ -263,12 +263,11 @@ function renderModuleAdvice() {
   if (networks.length) {
     const open = networks.filter(item => item.auth === 0);
     const legacy = networks.filter(item => item.auth === 1 || item.auth === 2);
-    const channelCounts = networks.reduce((result, item) => ({ ...result, [item.channel]: (result[item.channel] || 0) + 1 }), {});
-    const busiest = Object.entries(channelCounts).sort((a, b) => b[1] - a[1])[0];
+    const { advice: channelAdvice } = channelNotices(busiestChannel(networks));
     const wifiItems = [];
     if (legacy.length) wifiItems.push(addFinding('high', 'Cifrado heredado observable', `${legacy.length} red(es) anuncian WEP o WPA. En equipos propios, migra a WPA2-AES o WPA3.`));
     if (open.length) wifiItems.push(addFinding('medium', 'Redes abiertas cercanas', `${open.length} red(es) no anuncian cifrado. No envíes información sensible y valida aislamiento de clientes.`));
-    if (busiest && Number(busiest[1]) >= 4) wifiItems.push(addFinding('medium', `Canal ${busiest[0]} congestionado`, `${busiest[1]} redes comparten el canal. Mide en varios horarios antes de cambiar la configuración.`));
+    if (channelAdvice) wifiItems.push(noticeHtml(channelAdvice));
     if (!open.length && !legacy.length) wifiItems.push(addFinding('info', 'Configuración básica saludable', 'No se observó cifrado abierto o heredado. Aun así, revisa actualizaciones, contraseña y red de invitados.'));
     elements.wifiAdvice.innerHTML = wifiItems.join('');
   }
@@ -481,6 +480,35 @@ async function sendAndWait(command, completionType, timeoutMs = 12000) {
   const completion = waitForEvent(completionType, timeoutMs); await sendCommand(command); return completion;
 }
 
+// Canales: la puntuación suma 5 puntos con 12 o más redes en un mismo canal válido (regla compartida con Android);
+// desde 4 redes sólo se ofrece un consejo de optimización, que no es un hallazgo de riesgo ni cambia la puntuación.
+const CONGESTION_SCORE_NETWORKS = 12;
+const CHANNEL_ADVICE_NETWORKS = 4;
+
+/** Canal válido con más redes, o null. Una red sin canal entero no pertenece a ningún canal. */
+function busiestChannel(list) {
+  const counts = list.filter(network => Number.isInteger(network.channel)).reduce((result, network) => ({ ...result, [network.channel]: (result[network.channel] || 0) + 1 }), {});
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return top ? { channel: Number(top[0]), count: top[1] } : null;
+}
+
+/**
+ * Avisos de canal de una muestra: `finding` (riesgo, sólo cuando la regla de puntuación aplica), `advice` (consejo de
+ * optimización del módulo Wi-Fi) y `recommendation`. Sin canal válido o con menos de 4 redes no se nombra ningún canal.
+ */
+function channelNotices(busiest) {
+  const scored = Boolean(busiest) && busiest.count >= CONGESTION_SCORE_NETWORKS;
+  const crowded = Boolean(busiest) && busiest.count >= CHANNEL_ADVICE_NETWORKS;
+  return {
+    finding: scored ? { severity: 'medium', title: `Canal ${busiest.channel} concentra ${busiest.count} redes`, detail: `Con ${CONGESTION_SCORE_NETWORKS} o más redes en un canal la evaluación suma 5 puntos. La congestión puede degradar la disponibilidad y producir falsos síntomas de ataque o interferencia.` } : null,
+    advice: crowded ? { severity: 'info', title: `Optimización: canal ${busiest.channel} ${scored ? 'saturado' : 'compartido'}`, detail: `${busiest.count} redes comparten el canal. Es un consejo de rendimiento, no un riesgo de seguridad; mide en varios horarios antes de cambiar la configuración.` } : null,
+    recommendation: crowded
+      ? { severity: 'info', title: 'Revisar canales 1, 6 y 11', detail: `Si los puntos de acceso son tuyos, redistribúyelos cuando el canal ${busiest.channel} muestre saturación persistente.` }
+      : { severity: 'info', title: 'Revisar canales 1, 6 y 11', detail: `Ningún canal reúne ${CHANNEL_ADVICE_NETWORKS} o más redes en esta muestra; no hace falta redistribuir puntos de acceso.` },
+  };
+}
+const noticeHtml = notice => addFinding(notice.severity, notice.title, notice.detail);
+
 function addFinding(severity, title, detail) {
   return `<div class="finding ${severity}"><span>${severity === 'high' ? 'ALTO' : severity === 'medium' ? 'MEDIO' : 'INFO'}</span><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(detail)}</p></div></div>`;
 }
@@ -491,9 +519,8 @@ function renderAnalysis() {
   const weak = networks.filter(network => network.auth === 1 || network.auth === 2);
   const hidden = networks.filter(network => !network.ssid);
   const strongOpen = open.filter(network => network.rssi >= -70);
-  // Igual que Android: una red sin canal válido no forma parte de ningún canal (antes se agrupaban bajo «undefined»).
-  const channels = networks.filter(network => Number.isInteger(network.channel)).reduce((counts, network) => ({ ...counts, [network.channel]: (counts[network.channel] || 0) + 1 }), {});
-  const busiest = Object.entries(channels).sort((a, b) => b[1] - a[1])[0];
+  // Igual que Android: una red sin canal válido no forma parte de ningún canal.
+  const busiest = busiestChannel(networks);
   const nearbyBle = bleDevices.filter(device => device.rssi >= -65);
   const connectableBle = bleDevices.filter(device => device.connectable);
   const stableNearbyBle = nearbyBle.filter(device => !String(device.address_type).includes('random'));
@@ -503,7 +530,7 @@ function renderAnalysis() {
   score += Math.min(25, strongOpen.length * 5);
   score += Math.min(25, weak.length * 12);
   if (total && open.length / total >= .25) score += 10;
-  if (busiest && Number(busiest[1]) >= 12) score += 5;
+  if (busiest && busiest.count >= CONGESTION_SCORE_NETWORKS) score += 5;
   score += Math.min(10, stableNearbyBle.filter(device => device.connectable).length * 2);
   score = Math.min(100, score);
   const level = score >= 60 ? 'ALTO' : score >= 30 ? 'MEDIO' : 'BAJO';
@@ -532,7 +559,8 @@ function renderAnalysis() {
   else if (open.length) findings.push(addFinding('medium', `${open.length} redes abiertas detectadas`, 'La señal es lejana, pero conviene validar su propósito y segmentación.'));
   if (weak.length) findings.push(addFinding('high', `${weak.length} redes con seguridad heredada`, 'WEP o WPA antiguo no ofrecen protección adecuada frente a ataques actuales.'));
   if (hidden.length) findings.push(addFinding('info', `${hidden.length} redes sin SSID visible`, 'Ocultar el nombre no sustituye autenticación ni cifrado; documenta estos puntos de acceso.'));
-  if (busiest) findings.push(addFinding('medium', `Canal ${busiest[0]} concentra ${busiest[1]} redes`, 'La congestión puede degradar disponibilidad y producir falsos síntomas de ataque o interferencia.'));
+  const channel = channelNotices(busiest);
+  if (channel.finding) findings.push(noticeHtml(channel.finding));
   if (stableNearbyBle.length) findings.push(addFinding('medium', `${stableNearbyBle.length} dispositivos BLE cercanos con identificador estable`, 'Una dirección no aleatoria puede facilitar el seguimiento de presencia. Confirma que sean equipos autorizados y actualizados.'));
   if (connectableBle.length) findings.push(addFinding('info', `${connectableBle.length} dispositivos BLE aceptan conexión`, 'Ser conectable es normal; limita el emparejamiento y desactiva Bluetooth cuando no sea necesario.'));
   if (unnamedBle.length) findings.push(addFinding('info', `${unnamedBle.length} anuncios BLE sin nombre`, 'La ausencia de nombre no implica amenaza. Usa fabricante, servicios y repetición temporal para inventariarlos.'));
@@ -544,14 +572,14 @@ function renderAnalysis() {
   if (open.length) recommendations.push(addFinding('high', 'Validar redes abiertas', 'Identifica al propietario, habilita WPA2/WPA3 cuando corresponda y separa invitados de sistemas internos.'));
   if (weak.length) recommendations.push(addFinding('high', 'Retirar cifrado heredado', 'Migra WEP/WPA a WPA2-AES o WPA3 y cambia credenciales compartidas.'));
   if (stableNearbyBle.length) recommendations.push(addFinding('medium', 'Revisar privacidad Bluetooth', 'En equipos propios, habilita direcciones privadas resolubles, instala actualizaciones y elimina emparejamientos obsoletos.'));
-  recommendations.push(addFinding('medium', 'Revisar canales 1, 6 y 11', `Redistribuye puntos de acceso si el canal ${busiest?.[0] || 'principal'} muestra saturación persistente.`));
+  recommendations.push(noticeHtml(channel.recommendation));
   recommendations.push(addFinding('info', 'Repetir desde otros puntos', 'Este resultado es una fotografía local. Compara mediciones y registra cambios inesperados de BSSID o seguridad.'));
   elements.recommendations.innerHTML = recommendations.join('');
   renderModuleAdvice();
   currentReport = {
     schema: 'vigia-suite-report/1', createdAt: new Date().toISOString(), score, level,
     sensor: { board: identity.board || 'NodeMCU ESP-32S', chip: identity.chip || 'ESP32', mac: macLabel(identity.mac), firmware: elements.detailFirmware.textContent, protocol: elements.protocol.textContent },
-    wifi: { total, open: open.length, legacy: weak.length, hidden: hidden.length, busiestChannel: busiest ? Number(busiest[0]) : null, busiestCount: busiest ? Number(busiest[1]) : 0, truncated: wifiTruncated },
+    wifi: { total, open: open.length, legacy: weak.length, hidden: hidden.length, busiestChannel: busiest ? busiest.channel : null, busiestCount: busiest ? busiest.count : 0, truncated: wifiTruncated },
     bluetooth: { total: bleDevices.length, nearby: nearbyBle.length, connectable: connectableBle.length, stableNearby: stableNearbyBle.length, scanFailed: bleScanFailed, truncated: bleTruncated },
     wifiNetworks: networks.map(item => ({ ...item })), bleDevices: bleDevices.map(item => ({ ...item })),
     disclaimer: 'Observación pasiva local. Un hallazgo no demuestra por sí mismo una vulnerabilidad explotable.'
