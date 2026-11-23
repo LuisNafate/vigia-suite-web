@@ -1,0 +1,1334 @@
+{
+  "description": "Respuestas simuladas de NVD CVE API 2.0 y CPE API 2.0 y su interpretación esperada. Compartido por vigia-suite-web (tests/fixtures/) y vigia-suite-android (app/src/test/resources/); los dos archivos deben ser idénticos. Fechas esperadas en milisegundos UTC.",
+  "source": "Estructura de nvd.nist.gov/developers/vulnerabilities y /products (noviembre de 2026) y de respuestas reales de CVE-2021-44228 y de la CPE API; los identificadores CVE-2026-10001, CVE-2026-20002 y siguientes son ficticios.",
+  "responses": {
+    "cve-log4j": {
+      "resultsPerPage": 1,
+      "startIndex": 0,
+      "totalResults": 1,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "security@apache.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "es",
+                "value": "Apache Log4j2 2.0-beta9 hasta 2.15.0 ... (traducción)"
+              },
+              {
+                "lang": "en",
+                "value": "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints."
+              }
+            ],
+            "references": [
+              {
+                "url": "https://logging.apache.org/log4j/2.x/security.html",
+                "source": "security@apache.org",
+                "tags": [
+                  "Release Notes",
+                  "Vendor Advisory"
+                ]
+              },
+              {
+                "url": "https://logging.apache.org/log4j/2.x/security.html",
+                "source": "nvd@nist.gov",
+                "tags": [
+                  "Vendor Advisory"
+                ]
+              },
+              {
+                "url": "http://packetstormsecurity.com/files/165225/Apache-Log4j2-2.14.1-Remote-Code-Execution.html",
+                "source": "security@apache.org",
+                "tags": [
+                  "Third Party Advisory",
+                  "VDB Entry"
+                ]
+              },
+              {
+                "url": "javascript:alert(1)",
+                "source": "malicioso",
+                "tags": []
+              }
+            ],
+            "id": "CVE-2021-44228",
+            "published": "2021-12-10T10:15:09.143",
+            "lastModified": "2026-08-11T19:33:44.513",
+            "vulnStatus": "Analyzed",
+            "cisaExploitAdd": "2021-12-10",
+            "cisaActionDue": "2021-12-24",
+            "cisaRequiredAction": "For all affected software assets for which updates exist, the only acceptable remediation actions are: 1) Apply updates; OR 2) remove affected assets from agency networks.",
+            "cisaVulnerabilityName": "Apache Log4j2 Remote Code Execution Vulnerability",
+            "affected": [
+              {
+                "source": "security@apache.org",
+                "affectedData": [
+                  {
+                    "vendor": "Apache Software Foundation",
+                    "product": "Apache Log4j2",
+                    "versions": [
+                      {
+                        "version": "2.0-beta9",
+                        "status": "affected",
+                        "lessThan": "2.3.1",
+                        "versionType": "maven"
+                      },
+                      {
+                        "version": "2.13.0",
+                        "status": "affected",
+                        "lessThan": "2.15.0",
+                        "versionType": "maven"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "metrics": {
+              "cvssMetricV31": [
+                {
+                  "source": "security@apache.org",
+                  "type": "Secondary",
+                  "cvssData": {
+                    "version": "3.1",
+                    "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+                    "baseScore": 10,
+                    "baseSeverity": "CRITICAL"
+                  },
+                  "exploitabilityScore": 3.9,
+                  "impactScore": 6
+                },
+                {
+                  "source": "nvd@nist.gov",
+                  "type": "Primary",
+                  "cvssData": {
+                    "version": "3.1",
+                    "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+                    "baseScore": 10,
+                    "baseSeverity": "CRITICAL"
+                  },
+                  "exploitabilityScore": 3.9,
+                  "impactScore": 6
+                }
+              ],
+              "cvssMetricV2": [
+                {
+                  "source": "nvd@nist.gov",
+                  "type": "Primary",
+                  "cvssData": {
+                    "version": "2.0",
+                    "vectorString": "AV:N/AC:M/Au:N/C:C/I:C/A:C",
+                    "baseScore": 9.3
+                  },
+                  "baseSeverity": "HIGH",
+                  "exploitabilityScore": 8.6,
+                  "impactScore": 10
+                }
+              ],
+              "ssvcV203": [
+                {
+                  "source": "7fec8d14-91ab-4e8d-b2f1-5c3a9f7d6210",
+                  "ssvcData": {
+                    "options": [
+                      {
+                        "exploitation": "active"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "weaknesses": [
+              {
+                "source": "security@apache.org",
+                "type": "Primary",
+                "description": [
+                  {
+                    "lang": "en",
+                    "value": "CWE-917"
+                  },
+                  {
+                    "lang": "en",
+                    "value": "CWE-20"
+                  }
+                ]
+              },
+              {
+                "source": "nvd@nist.gov",
+                "type": "Secondary",
+                "description": [
+                  {
+                    "lang": "en",
+                    "value": "CWE-917"
+                  }
+                ]
+              }
+            ],
+            "configurations": [
+              {
+                "nodes": [
+                  {
+                    "operator": "OR",
+                    "negate": false,
+                    "cpeMatch": [
+                      {
+                        "vulnerable": true,
+                        "criteria": "cpe:2.3:a:apache:log4j:*:*:*:*:*:*:*:*",
+                        "versionStartIncluding": "2.0.1",
+                        "versionEndExcluding": "2.3.1",
+                        "matchCriteriaId": "00000000-0000-0000-0000-000000000001"
+                      },
+                      {
+                        "vulnerable": true,
+                        "criteria": "cpe:2.3:a:apache:log4j:*:*:*:*:*:*:*:*",
+                        "versionStartIncluding": "2.4.0",
+                        "versionEndExcluding": "2.12.2",
+                        "matchCriteriaId": "00000000-0000-0000-0000-000000000001"
+                      },
+                      {
+                        "vulnerable": true,
+                        "criteria": "cpe:2.3:a:apache:log4j:*:*:*:*:*:*:*:*",
+                        "versionStartIncluding": "2.13.0",
+                        "versionEndExcluding": "2.15.0",
+                        "matchCriteriaId": "00000000-0000-0000-0000-000000000001"
+                      },
+                      {
+                        "vulnerable": true,
+                        "criteria": "cpe:2.3:a:apache:log4j:2.0:beta9:*:*:*:*:*:*",
+                        "matchCriteriaId": "00000000-0000-0000-0000-000000000002"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "operator": "AND",
+                "nodes": [
+                  {
+                    "operator": "OR",
+                    "negate": false,
+                    "cpeMatch": [
+                      {
+                        "vulnerable": true,
+                        "criteria": "cpe:2.3:o:siemens:6bk1602-0aa12-0tp0_firmware:*:*:*:*:*:*:*:*",
+                        "versionEndExcluding": "2.7.0",
+                        "matchCriteriaId": "BD64FC36-CC7B-4FD7-9845-7EA1DDB0E627"
+                      }
+                    ]
+                  },
+                  {
+                    "operator": "OR",
+                    "negate": false,
+                    "cpeMatch": [
+                      {
+                        "vulnerable": false,
+                        "criteria": "cpe:2.3:h:siemens:6bk1602-0aa12-0tp0:-:*:*:*:*:*:*:*",
+                        "matchCriteriaId": "CF99FE8F-40D0-48A8-9A40-43119B259535"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "cve-v4": {
+      "resultsPerPage": 1,
+      "startIndex": 0,
+      "totalResults": 1,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [
+              {
+                "sourceIdentifier": "cve@example.org",
+                "tags": [
+                  "disputed"
+                ]
+              }
+            ],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "Example router firmware allows authentication bypass."
+              }
+            ],
+            "references": [
+              {
+                "url": "https://example.org/advisory/10001",
+                "source": "cna@example.org",
+                "tags": [
+                  "Vendor Advisory"
+                ]
+              }
+            ],
+            "id": "CVE-2026-10001",
+            "published": "2026-05-02T08:00:00.000",
+            "lastModified": "2026-06-01T12:30:00.500",
+            "vulnStatus": "Modified",
+            "metrics": {
+              "cvssMetricV40": [
+                {
+                  "source": "cna@example.org",
+                  "type": "Secondary",
+                  "cvssData": {
+                    "version": "4.0",
+                    "vectorString": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N",
+                    "baseScore": 8.7,
+                    "baseSeverity": "HIGH"
+                  }
+                }
+              ],
+              "cvssMetricV31": [
+                {
+                  "source": "nvd@nist.gov",
+                  "type": "Primary",
+                  "cvssData": {
+                    "version": "3.1",
+                    "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+                    "baseScore": 7.5,
+                    "baseSeverity": "HIGH"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "cve-v30-v2": {
+      "resultsPerPage": 1,
+      "startIndex": 0,
+      "totalResults": 1,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "Legacy record scored with CVSS v3.0 and v2."
+              }
+            ],
+            "references": [],
+            "id": "CVE-2016-0001",
+            "published": "2016-01-05T00:00:00",
+            "lastModified": "2019-03-01T10:00:00Z",
+            "vulnStatus": "Analyzed",
+            "metrics": {
+              "cvssMetricV30": [
+                {
+                  "source": "nvd@nist.gov",
+                  "type": "Primary",
+                  "cvssData": {
+                    "version": "3.0",
+                    "vectorString": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N",
+                    "baseScore": 5.4,
+                    "baseSeverity": "medium"
+                  }
+                }
+              ],
+              "cvssMetricV2": [
+                {
+                  "source": "nvd@nist.gov",
+                  "type": "Primary",
+                  "cvssData": {
+                    "version": "2.0",
+                    "baseScore": 4.3
+                  },
+                  "baseSeverity": "MEDIUM"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "cve-v2-only": {
+      "resultsPerPage": 1,
+      "startIndex": 0,
+      "totalResults": 1,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "Old vulnerability with only CVSS v2."
+              }
+            ],
+            "references": [],
+            "id": "CVE-2005-2222",
+            "published": "2005-07-12T04:00:00.000",
+            "lastModified": "2018-10-19T15:30:00.000",
+            "vulnStatus": "Analyzed",
+            "metrics": {
+              "cvssMetricV2": [
+                {
+                  "source": "nvd@nist.gov",
+                  "type": "Primary",
+                  "cvssData": {
+                    "version": "2.0",
+                    "vectorString": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+                    "baseScore": 5
+                  },
+                  "baseSeverity": "MEDIUM"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "cve-no-metrics": {
+      "resultsPerPage": 1,
+      "startIndex": 0,
+      "totalResults": 1,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "Newly published record without NVD analysis."
+              }
+            ],
+            "references": [
+              {
+                "url": "https://example.org/report",
+                "source": "cve@example.org"
+              }
+            ],
+            "id": "CVE-2026-20002",
+            "published": "2026-11-20T18:15:00.000",
+            "lastModified": "2026-11-21T09:00:00.000",
+            "vulnStatus": "Awaiting Analysis"
+          }
+        }
+      ]
+    },
+    "cve-rejected": {
+      "resultsPerPage": 1,
+      "startIndex": 0,
+      "totalResults": 1,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "Rejected reason: This candidate was withdrawn by its CNA."
+              }
+            ],
+            "references": [],
+            "id": "CVE-2023-30003",
+            "published": "2023-04-01T00:00:00.000",
+            "lastModified": "2023-05-01T00:00:00.000",
+            "vulnStatus": "Rejected"
+          }
+        }
+      ]
+    },
+    "cve-incomplete": {
+      "resultsPerPage": 3,
+      "startIndex": 0,
+      "totalResults": 3,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "   "
+              }
+            ],
+            "references": [
+              {
+                "url": "no es una url"
+              },
+              {
+                "url": "ftp://example.org/file"
+              },
+              {
+                "url": "https://example.org/ok"
+              }
+            ],
+            "id": "CVE-2024-40004",
+            "vulnStatus": null,
+            "published": "21/03/2024",
+            "metrics": {
+              "cvssMetricV31": [
+                {
+                  "source": "x",
+                  "type": "Other",
+                  "cvssData": {
+                    "baseScore": "7.5"
+                  }
+                },
+                {
+                  "source": "y",
+                  "type": "Primary",
+                  "cvssData": {
+                    "baseScore": 11,
+                    "baseSeverity": "EXTREME"
+                  }
+                }
+              ]
+            },
+            "configurations": [
+              {
+                "nodes": [
+                  {
+                    "operator": "OR",
+                    "cpeMatch": [
+                      {
+                        "vulnerable": true,
+                        "criteria": "apache log4j"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [],
+            "references": [],
+            "id": "cve-xx",
+            "vulnStatus": "Analyzed"
+          }
+        },
+        {
+          "sin": "cve"
+        }
+      ]
+    },
+    "cve-empty": {
+      "resultsPerPage": 0,
+      "startIndex": 0,
+      "totalResults": 0,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": []
+    },
+    "keyword-page-1": {
+      "resultsPerPage": 2,
+      "startIndex": 0,
+      "totalResults": 3,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "First result."
+              }
+            ],
+            "references": [],
+            "id": "CVE-2022-0001",
+            "vulnStatus": "Analyzed"
+          }
+        },
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "Second result."
+              }
+            ],
+            "references": [],
+            "id": "CVE-2022-0002",
+            "vulnStatus": "Analyzed"
+          }
+        }
+      ]
+    },
+    "keyword-page-2": {
+      "resultsPerPage": 2,
+      "startIndex": 2,
+      "totalResults": 3,
+      "format": "NVD_CVE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:49:48.727",
+      "vulnerabilities": [
+        {
+          "cve": {
+            "sourceIdentifier": "cve@example.org",
+            "cveTags": [],
+            "descriptions": [
+              {
+                "lang": "en",
+                "value": "Third result."
+              }
+            ],
+            "references": [],
+            "id": "CVE-2022-0003",
+            "vulnStatus": "Deferred"
+          }
+        }
+      ]
+    },
+    "cpe-search": {
+      "resultsPerPage": 4,
+      "startIndex": 0,
+      "totalResults": 9,
+      "format": "NVD_CPE",
+      "version": "2.0",
+      "timestamp": "2026-11-23T10:52:58.403",
+      "products": [
+        {
+          "cpe": {
+            "deprecated": false,
+            "cpeName": "cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*",
+            "cpeNameId": "A1B2C3D4-0000-0000-0000-000000000001",
+            "lastModified": "2021-04-01T12:00:00.000",
+            "created": "2021-03-25T12:00:00.000",
+            "titles": [
+              {
+                "title": "OpenSSL 1.1.1k",
+                "lang": "en"
+              },
+              {
+                "title": "OpenSSL 1.1.1k (ja)",
+                "lang": "ja"
+              }
+            ]
+          }
+        },
+        {
+          "cpe": {
+            "deprecated": true,
+            "cpeName": "cpe:2.3:a:openssl:openssl:-:*:*:*:*:*:*:*",
+            "cpeNameId": "FEE7DC6B-6311-4D2D-BDEA-F1D2194E31A0",
+            "lastModified": "2008-03-25T19:16:28.273",
+            "titles": [
+              {
+                "title": "OpenSSL Project OpenSSL",
+                "lang": "en"
+              }
+            ],
+            "deprecatedBy": [
+              {
+                "cpeName": "cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*",
+                "cpeNameId": "B0000000-0000-0000-0000-000000000000"
+              }
+            ]
+          }
+        },
+        {
+          "cpe": {
+            "deprecated": false,
+            "cpeName": "cpe:2.3:a:openssl:openssl",
+            "titles": [
+              {
+                "title": "Nombre incompleto",
+                "lang": "en"
+              }
+            ]
+          }
+        },
+        {
+          "cpe": {
+            "deprecated": false,
+            "cpeName": "cpe:2.3:o:example:router\\:pro_firmware:2.4:*:*:*:*:*:*:*",
+            "titles": [
+              {
+                "title": "ルーター",
+                "lang": "ja"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "bad-format": {
+      "resultsPerPage": 1,
+      "message": "no es la CVE API"
+    }
+  },
+  "expected": {
+    "cve-log4j": {
+      "page": {
+        "totalResults": 1,
+        "startIndex": 0,
+        "resultsPerPage": 1,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "items": [
+        {
+          "id": "CVE-2021-44228",
+          "status": "Analyzed",
+          "rejected": false,
+          "published": 1639131309143,
+          "lastModified": 1786476824513,
+          "description": "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints.",
+          "primaryMetric": {
+            "version": "3.1",
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "score": 10,
+            "severity": "CRITICAL",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"
+          },
+          "metricVersions": [
+            "3.1",
+            "3.1",
+            "2.0"
+          ],
+          "metricSources": [
+            "nvd@nist.gov",
+            "security@apache.org",
+            "nvd@nist.gov"
+          ],
+          "v2Severity": "HIGH",
+          "weaknesses": [
+            "CWE-917",
+            "CWE-20"
+          ],
+          "tags": [],
+          "references": [
+            "https://logging.apache.org/log4j/2.x/security.html",
+            "http://packetstormsecurity.com/files/165225/Apache-Log4j2-2.14.1-Remote-Code-Execution.html"
+          ],
+          "configurations": [
+            {
+              "operator": "OR",
+              "nodes": 1,
+              "matches": 4
+            },
+            {
+              "operator": "AND",
+              "nodes": 2,
+              "matches": 2
+            }
+          ],
+          "affected": [
+            {
+              "vendor": "Apache Software Foundation",
+              "product": "Apache Log4j2",
+              "versions": [
+                "2.0-beta9 < 2.3.1 affected",
+                "2.13.0 < 2.15.0 affected"
+              ]
+            }
+          ],
+          "kev": "2021-12-10"
+        }
+      ]
+    },
+    "cve-v4": {
+      "page": {
+        "totalResults": 1,
+        "startIndex": 0,
+        "resultsPerPage": 1,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "items": [
+        {
+          "id": "CVE-2026-10001",
+          "status": "Modified",
+          "rejected": false,
+          "published": 1777708800000,
+          "lastModified": 1780317000500,
+          "description": "Example router firmware allows authentication bypass.",
+          "primaryMetric": {
+            "version": "4.0",
+            "source": "cna@example.org",
+            "type": "Secondary",
+            "score": 8.7,
+            "severity": "HIGH",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+          },
+          "metricVersions": [
+            "4.0",
+            "3.1"
+          ],
+          "metricSources": [
+            "cna@example.org",
+            "nvd@nist.gov"
+          ],
+          "v2Severity": null,
+          "weaknesses": [],
+          "tags": [
+            "disputed"
+          ],
+          "references": [
+            "https://example.org/advisory/10001"
+          ],
+          "configurations": [],
+          "affected": [],
+          "kev": null
+        }
+      ]
+    },
+    "cve-v30-v2": {
+      "page": {
+        "totalResults": 1,
+        "startIndex": 0,
+        "resultsPerPage": 1,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "items": [
+        {
+          "id": "CVE-2016-0001",
+          "status": "Analyzed",
+          "rejected": false,
+          "published": 1451952000000,
+          "lastModified": 1551434400000,
+          "description": "Legacy record scored with CVSS v3.0 and v2.",
+          "primaryMetric": {
+            "version": "3.0",
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "score": 5.4,
+            "severity": "MEDIUM",
+            "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N"
+          },
+          "metricVersions": [
+            "3.0",
+            "2.0"
+          ],
+          "metricSources": [
+            "nvd@nist.gov",
+            "nvd@nist.gov"
+          ],
+          "v2Severity": "MEDIUM",
+          "weaknesses": [],
+          "tags": [],
+          "references": [],
+          "configurations": [],
+          "affected": [],
+          "kev": null
+        }
+      ]
+    },
+    "cve-v2-only": {
+      "page": {
+        "totalResults": 1,
+        "startIndex": 0,
+        "resultsPerPage": 1,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "items": [
+        {
+          "id": "CVE-2005-2222",
+          "status": "Analyzed",
+          "rejected": false,
+          "published": 1121140800000,
+          "lastModified": 1539963000000,
+          "description": "Old vulnerability with only CVSS v2.",
+          "primaryMetric": {
+            "version": "2.0",
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "score": 5,
+            "severity": "MEDIUM",
+            "vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
+          },
+          "metricVersions": [
+            "2.0"
+          ],
+          "metricSources": [
+            "nvd@nist.gov"
+          ],
+          "v2Severity": "MEDIUM",
+          "weaknesses": [],
+          "tags": [],
+          "references": [],
+          "configurations": [],
+          "affected": [],
+          "kev": null
+        }
+      ]
+    },
+    "cve-no-metrics": {
+      "page": {
+        "totalResults": 1,
+        "startIndex": 0,
+        "resultsPerPage": 1,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "items": [
+        {
+          "id": "CVE-2026-20002",
+          "status": "Awaiting Analysis",
+          "rejected": false,
+          "published": 1795198500000,
+          "lastModified": 1795251600000,
+          "description": "Newly published record without NVD analysis.",
+          "primaryMetric": null,
+          "metricVersions": [],
+          "metricSources": [],
+          "v2Severity": null,
+          "weaknesses": [],
+          "tags": [],
+          "references": [
+            "https://example.org/report"
+          ],
+          "configurations": [],
+          "affected": [],
+          "kev": null
+        }
+      ]
+    },
+    "cve-rejected": {
+      "page": {
+        "totalResults": 1,
+        "startIndex": 0,
+        "resultsPerPage": 1,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "items": [
+        {
+          "id": "CVE-2023-30003",
+          "status": "Rejected",
+          "rejected": true,
+          "published": 1680307200000,
+          "lastModified": 1682899200000,
+          "description": "Rejected reason: This candidate was withdrawn by its CNA.",
+          "primaryMetric": null,
+          "metricVersions": [],
+          "metricSources": [],
+          "v2Severity": null,
+          "weaknesses": [],
+          "tags": [],
+          "references": [],
+          "configurations": [],
+          "affected": [],
+          "kev": null
+        }
+      ]
+    },
+    "cve-incomplete": {
+      "page": {
+        "totalResults": 3,
+        "startIndex": 0,
+        "resultsPerPage": 3,
+        "nextStartIndex": null
+      },
+      "skipped": 2,
+      "items": [
+        {
+          "id": "CVE-2024-40004",
+          "status": null,
+          "rejected": false,
+          "published": null,
+          "lastModified": null,
+          "description": null,
+          "primaryMetric": null,
+          "metricVersions": [],
+          "metricSources": [],
+          "v2Severity": null,
+          "weaknesses": [],
+          "tags": [],
+          "references": [
+            "https://example.org/ok"
+          ],
+          "configurations": [],
+          "affected": [],
+          "kev": null
+        }
+      ]
+    },
+    "cve-empty": {
+      "page": {
+        "totalResults": 0,
+        "startIndex": 0,
+        "resultsPerPage": 0,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "items": []
+    },
+    "keyword-page-1": {
+      "page": {
+        "totalResults": 3,
+        "startIndex": 0,
+        "resultsPerPage": 2,
+        "nextStartIndex": 2
+      },
+      "skipped": 0,
+      "ids": [
+        "CVE-2022-0001",
+        "CVE-2022-0002"
+      ]
+    },
+    "keyword-page-2": {
+      "page": {
+        "totalResults": 3,
+        "startIndex": 2,
+        "resultsPerPage": 2,
+        "nextStartIndex": null
+      },
+      "skipped": 0,
+      "ids": [
+        "CVE-2022-0003"
+      ]
+    },
+    "cpe-search": {
+      "page": {
+        "totalResults": 9,
+        "startIndex": 0,
+        "resultsPerPage": 4,
+        "nextStartIndex": 4
+      },
+      "skipped": 1,
+      "products": [
+        {
+          "cpeName": "cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*",
+          "title": "OpenSSL 1.1.1k",
+          "vendor": "openssl",
+          "product": "openssl",
+          "version": "1.1.1k",
+          "deprecated": false,
+          "deprecatedBy": [],
+          "lastModified": 1617278400000
+        },
+        {
+          "cpeName": "cpe:2.3:a:openssl:openssl:-:*:*:*:*:*:*:*",
+          "title": "OpenSSL Project OpenSSL",
+          "vendor": "openssl",
+          "product": "openssl",
+          "version": "-",
+          "deprecated": true,
+          "deprecatedBy": [
+            "cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*"
+          ],
+          "lastModified": 1206472588273
+        },
+        {
+          "cpeName": "cpe:2.3:o:example:router\\:pro_firmware:2.4:*:*:*:*:*:*:*",
+          "title": "ルーター",
+          "vendor": "example",
+          "product": "router\\:pro_firmware",
+          "version": "2.4",
+          "deprecated": false,
+          "deprecatedBy": [],
+          "lastModified": null
+        }
+      ]
+    }
+  },
+  "formatErrors": [
+    "bad-format"
+  ],
+  "applicability": [
+    {
+      "name": "log4j 2.14.1 dentro de 2.13.0–2.15.0 (excluida)",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*",
+      "expected": "applies",
+      "requirements": []
+    },
+    {
+      "name": "log4j 2.15.0: el límite superior está excluido",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.15.0:*:*:*:*:*:*:*",
+      "expected": "not_matched",
+      "requirements": []
+    },
+    {
+      "name": "log4j 2.12.2: versión corregida entre dos rangos",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.12.2:*:*:*:*:*:*:*",
+      "expected": "not_matched",
+      "requirements": []
+    },
+    {
+      "name": "log4j 2.3.0 dentro de 2.0.1–2.3.1",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.3.0:*:*:*:*:*:*:*",
+      "expected": "applies",
+      "requirements": []
+    },
+    {
+      "name": "log4j 2.3.1: límite excluido",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.3.1:*:*:*:*:*:*:*",
+      "expected": "not_matched",
+      "requirements": []
+    },
+    {
+      "name": "log4j 2.0 beta9: coincidencia exacta de versión y actualización",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.0:beta9:*:*:*:*:*:*",
+      "expected": "applies",
+      "requirements": []
+    },
+    {
+      "name": "log4j 2.0 rc1: la actualización no coincide y 2.0 < 2.0.1",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.0:rc1:*:*:*:*:*:*",
+      "expected": "not_matched",
+      "requirements": []
+    },
+    {
+      "name": "log4j sin versión: no se puede comprobar el rango",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:-:*:*:*:*:*:*:*",
+      "expected": "uncertain",
+      "requirements": []
+    },
+    {
+      "name": "log4j 2.14.1-rc1: versión con letras",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.14.1-rc1:*:*:*:*:*:*:*",
+      "expected": "uncertain",
+      "requirements": []
+    },
+    {
+      "name": "firmware Siemens 2.6: vulnerable sólo con su hardware (AND)",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:o:siemens:6bk1602-0aa12-0tp0_firmware:2.6:*:*:*:*:*:*:*",
+      "expected": "conditional",
+      "requirements": [
+        "siemens 6bk1602-0aa12-0tp0 (sin versión aplicable)"
+      ]
+    },
+    {
+      "name": "firmware Siemens 2.7.0: fuera del rango",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:o:siemens:6bk1602-0aa12-0tp0_firmware:2.7.0:*:*:*:*:*:*:*",
+      "expected": "not_matched",
+      "requirements": []
+    },
+    {
+      "name": "hardware Siemens: figura como plataforma no vulnerable",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:h:siemens:6bk1602-0aa12-0tp0:-:*:*:*:*:*:*:*",
+      "expected": "not_matched",
+      "requirements": []
+    },
+    {
+      "name": "otro producto",
+      "response": "cve-log4j",
+      "cpeName": "cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*",
+      "expected": "not_matched",
+      "requirements": []
+    },
+    {
+      "name": "CVE sin configuraciones publicadas",
+      "response": "cve-no-metrics",
+      "cpeName": "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*",
+      "expected": "no_configurations",
+      "requirements": []
+    }
+  ],
+  "versions": [
+    {
+      "a": "2.15",
+      "b": "2.15.0",
+      "expected": 0
+    },
+    {
+      "a": "2.14.1",
+      "b": "2.15.0",
+      "expected": -1
+    },
+    {
+      "a": "10.0",
+      "b": "9.9",
+      "expected": 1
+    },
+    {
+      "a": "01.2",
+      "b": "1.2",
+      "expected": 0
+    },
+    {
+      "a": "2.0_1",
+      "b": "2.0.1",
+      "expected": 0
+    },
+    {
+      "a": "20240101123456789",
+      "b": "20240101123456788",
+      "expected": 1
+    },
+    {
+      "a": "2.0-beta9",
+      "b": "2.0",
+      "expected": null
+    },
+    {
+      "a": "1.1.1k",
+      "b": "1.1.1K",
+      "expected": 0
+    },
+    {
+      "a": "1.1.1k",
+      "b": "1.1.1l",
+      "expected": null
+    },
+    {
+      "a": "",
+      "b": "1.0",
+      "expected": null
+    }
+  ],
+  "urls": [
+    {
+      "name": "CVE con espacios y minúsculas",
+      "kind": "cveById",
+      "input": " cve-2021-44228 ",
+      "expected": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveIds=CVE-2021-44228"
+    },
+    {
+      "name": "CVE con año de dos cifras",
+      "kind": "cveById",
+      "input": "CVE-21-1",
+      "expected": null
+    },
+    {
+      "name": "CVE con texto adicional",
+      "kind": "cveById",
+      "input": "CVE-2021-44228; DROP",
+      "expected": null
+    },
+    {
+      "name": "palabra clave exacta con espacios repetidos",
+      "kind": "cveByKeyword",
+      "input": "  Apache   Log4j ",
+      "options": {
+        "exact": true
+      },
+      "expected": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=Apache%20Log4j&keywordExactMatch&resultsPerPage=20&startIndex=0"
+    },
+    {
+      "name": "palabra clave sin rechazadas y página 3",
+      "kind": "cveByKeyword",
+      "input": "router",
+      "options": {
+        "noRejected": true,
+        "startIndex": 40
+      },
+      "expected": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=router&noRejected&resultsPerPage=20&startIndex=40"
+    },
+    {
+      "name": "palabra clave con caracteres especiales",
+      "kind": "cveByKeyword",
+      "input": "contraseña & <b>",
+      "options": {},
+      "expected": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=contrase%C3%B1a%20%26%20%3Cb%3E&resultsPerPage=20&startIndex=0"
+    },
+    {
+      "name": "una MAC no se envía",
+      "kind": "cveByKeyword",
+      "input": "router aa:bb:cc:dd:ee:ff",
+      "options": {},
+      "expected": null
+    },
+    {
+      "name": "un BSSID con guiones no se envía",
+      "kind": "cpeSearch",
+      "input": "AA-BB-CC-DD-EE-FF",
+      "options": {},
+      "expected": null
+    },
+    {
+      "name": "búsqueda vacía",
+      "kind": "cveByKeyword",
+      "input": "   ",
+      "options": {},
+      "expected": null
+    },
+    {
+      "name": "búsqueda demasiado larga",
+      "kind": "cpeSearch",
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "options": {},
+      "expected": null
+    },
+    {
+      "name": "búsqueda de producto",
+      "kind": "cpeSearch",
+      "input": "openssl 1.1.1",
+      "options": {
+        "startIndex": 20
+      },
+      "expected": "https://services.nvd.nist.gov/rest/json/cpes/2.0?keywordSearch=openssl%201.1.1&resultsPerPage=20&startIndex=20"
+    },
+    {
+      "name": "CVE de un CPE seleccionado",
+      "kind": "cveByCpe",
+      "input": "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*",
+      "options": {},
+      "expected": "https://services.nvd.nist.gov/rest/json/cves/2.0?cpeName=cpe:2.3:a:apache:log4j:2.14.1:%2A:%2A:%2A:%2A:%2A:%2A:%2A&isVulnerable&resultsPerPage=20&startIndex=0"
+    },
+    {
+      "name": "CPE con dos puntos escapados",
+      "kind": "cveByCpe",
+      "input": "cpe:2.3:o:example:router\\:pro_firmware:2.4:*:*:*:*:*:*:*",
+      "options": {
+        "noRejected": true
+      },
+      "expected": "https://services.nvd.nist.gov/rest/json/cves/2.0?cpeName=cpe:2.3:o:example:router%5C:pro_firmware:2.4:%2A:%2A:%2A:%2A:%2A:%2A:%2A&isVulnerable&noRejected&resultsPerPage=20&startIndex=0"
+    },
+    {
+      "name": "texto libre en lugar de CPE",
+      "kind": "cveByCpe",
+      "input": "apache log4j",
+      "options": {},
+      "expected": null
+    },
+    {
+      "name": "CPE incompleto",
+      "kind": "cveByCpe",
+      "input": "cpe:2.3:a:openssl:openssl",
+      "options": {},
+      "expected": null
+    }
+  ]
+}
