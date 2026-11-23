@@ -24,7 +24,7 @@
 
 Suite defensiva web conectada a un sensor NodeMCU ESP-32S mediante USB. Este repositorio contiene la presentación, el laboratorio web, el firmware y las herramientas para preparar el sensor.
 
-El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hallazgos explicados y recomendaciones. La web conserva hasta 20 resúmenes en el navegador y exporta el informe completo como JSON o CSV.
+El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hallazgos explicados y recomendaciones. Cada evaluación se guarda completa en el historial local del navegador (IndexedDB), con todas sus redes y dispositivos observados; si IndexedDB no está disponible, se conservan hasta 20 resúmenes en `localStorage`, como en la versión anterior. El informe completo se exporta como JSON o CSV.
 
 ## Enlaces rápidos
 
