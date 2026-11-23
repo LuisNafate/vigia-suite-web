@@ -9,9 +9,9 @@ const read = file => readFile(new URL(`../${file}`, import.meta.url), 'utf8');
 const idsIn = html => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]));
 const selectorsIn = source => [...source.matchAll(/\$\('#([A-Za-z0-9_-]+)'\)/g)].map(match => match[1]);
 
-test('dashboard.html contiene todos los elementos que usan app.js, installer.js e history.js', async () => {
+test('dashboard.html contiene todos los elementos que usan app.js, installer.js, history.js y nvd.js', async () => {
   const ids = idsIn(await read('pc-lab/dashboard.html'));
-  for (const file of ['pc-lab/app.js', 'pc-lab/installer.js', 'pc-lab/history.js']) {
+  for (const file of ['pc-lab/app.js', 'pc-lab/installer.js', 'pc-lab/history.js', 'pc-lab/nvd.js']) {
     const missing = selectorsIn(await read(file)).filter(id => !ids.has(id));
     assert.deepEqual(missing, [], `${file} referencia ids inexistentes`);
   }
@@ -139,6 +139,18 @@ test('el historial no envía datos fuera del navegador', async () => {
     const source = await read(file);
     assert.doesNotMatch(source, /fetch\(|XMLHttpRequest|sendBeacon|WebSocket|nvd\.nist/i, `${file} no debe hacer peticiones de red`);
   }
+});
+
+test('la consulta NVD no lee el inventario del sensor ni el historial, y sólo contacta con NVD', async () => {
+  for (const file of ['pc-lab/nvd.js', 'pc-lab/nvd-core.js', 'pc-lab/nvd-client.js', 'pc-lab/nvd-store.js']) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /VigiaApp|VigiaHistory|history-store|history-core|wifiNetworks|bleDevices|navigator\.serial|localStorage/, `${file} no debe usar datos del sensor ni del historial`);
+    assert.doesNotMatch(source, /apiKey|XMLHttpRequest|sendBeacon|WebSocket/, `${file} no debe usar claves ni otros canales`);
+    for (const url of source.match(/https?:\/\/[^\s'"`)]+/g) ?? []) assert.match(url, /^https:\/\/(services\.)?nvd\.nist\.gov\//, `${file}: ${url}`);
+  }
+  const sw = await read('pc-lab/service-worker.js');
+  assert.match(sw, /url\.origin !== self\.location\.origin\) return;/, 'el service worker no intercepta NVD');
+  for (const file of ['/nvd.js', '/nvd-core.js', '/nvd-client.js', '/nvd-store.js']) assert.ok(sw.includes(`'${file}'`), `${file} en la caché de la aplicación`);
 });
 
 test('la puntuación de app.js no cambió con el historial', async () => {

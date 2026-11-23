@@ -25,6 +25,7 @@
       <button class="tab" data-view-target="wifi"><strong>Wi-Fi Recon <span id="wifiBadge">0</span></strong><small>Inventario y defensa</small></button>
       <button class="tab" data-view-target="bluetooth"><strong>Bluetooth <span id="bleBadge">0</span></strong><small>Privacidad y cercanía</small></button>
       <button class="tab" data-view-target="historial"><strong>Historial</strong><small>Evaluaciones y comparación</small></button>
+      <button class="tab" data-view-target="nvd"><strong>Vulnerabilidades</strong><small>CVE y productos en NVD</small></button>
       <button class="tab" data-view-target="diagnostico"><strong>Sistema</strong><small>Sensor y firmware</small></button>
       <button class="tab" data-view-target="instalar"><strong>Preparar ESP32</strong><small>Instalar o actualizar firmware</small></button>
       <div class="side-note"><span>VIGIA/2</span><strong>Procesamiento local</strong><small>Los datos permanecen en este dispositivo.</small></div>
@@ -176,6 +177,57 @@
       <article class="panel history-detail" id="historyComparison" hidden></article>
     </section>
 
+    <section class="view" data-view="nvd" aria-labelledby="nvdTitle">
+      <div class="section-heading"><div><p class="eyebrow">CONSULTA PÚBLICA · NVD CVE API 2.0 Y CPE API 2.0</p><h2 id="nvdTitle">Vulnerabilidades documentadas</h2><p class="section-description">Consulta CVE publicadas por NVD para un producto y su versión. Son vulnerabilidades documentadas, no hallazgos del sensor: Vigía no las asocia con redes ni dispositivos observados, porque un SSID, una MAC o un tipo de autenticación no identifican el producto ni su firmware.</p></div></div>
+      <p class="analysis-note nvd-notice"><strong lang="en">This product uses the NVD API but is not endorsed or certified by the NVD.</strong> Cada consulta envía a services.nvd.nist.gov sólo el texto que escribes o el producto que eliges, nunca el inventario Wi-Fi o Bluetooth. NVD recibe tu dirección IP como en cualquier visita web; las respuestas se guardan en este navegador con la fecha de consulta.</p>
+      <div class="workspace-grid nvd-workspace">
+        <article class="panel">
+          <div class="panel-heading"><div><p class="overline">BÚSQUEDA</p><h2>Qué quieres consultar</h2></div></div>
+          <div class="filter-bar" role="group" aria-label="Tipo de búsqueda"><button class="filter active" type="button" data-nvd-mode="cve">Identificador CVE</button><button class="filter" type="button" data-nvd-mode="keyword">Palabras clave</button><button class="filter" type="button" data-nvd-mode="cpe">Producto (CPE)</button></div>
+          <form id="nvdForm" class="nvd-form" novalidate>
+            <label class="fw-select-label" for="nvdQuery" id="nvdQueryLabel">Identificador CVE</label>
+            <input id="nvdQuery" type="search" autocomplete="off" spellcheck="false" maxlength="120" placeholder="CVE-2021-44228">
+            <p class="history-help" id="nvdHint">Escribe un identificador con la forma CVE-AAAA-NNNN.</p>
+            <label class="nvd-option" id="nvdExactOption" hidden><input type="checkbox" id="nvdExact"> Frase exacta</label>
+            <label class="nvd-option" id="nvdRejectedOption" hidden><input type="checkbox" id="nvdNoRejected"> Excluir CVE rechazadas</label>
+            <div class="button-row"><button class="primary" type="submit" id="nvdSearch">Consultar NVD</button><button class="ghost" type="button" id="nvdRefresh" disabled>Actualizar desde NVD</button></div>
+          </form>
+          <p class="nvd-status" id="nvdStatus" role="status" aria-live="polite">Sin consultas todavía.</p>
+          <p class="nvd-fetched" id="nvdFetched"></p>
+        </article>
+        <article class="panel">
+          <p class="overline">CÓMO INTERPRETARLO</p><h2>Antes de concluir</h2>
+          <ul class="history-privacy">
+            <li>Una CVE describe una vulnerabilidad de un producto y unas versiones concretas. Sólo te afecta si usas ese producto en una versión incluida.</li>
+            <li>La puntuación es la CVSS publicada, con su versión y su fuente. Una CVE sin puntuación no es de riesgo bajo: todavía no tiene métrica.</li>
+            <li>Con un producto elegido, Vigía compara su versión con los rangos y condiciones de NVD; si no puede comprobarlo, lo indica.</li>
+            <li>NVD limita las consultas públicas a 5 cada 30 segundos. Vigía espera 6 segundos entre consultas y reutiliza las guardadas durante 24 horas.</li>
+          </ul>
+        </article>
+      </div>
+      <article class="panel nvd-panel" id="nvdCpePanel" hidden>
+        <div class="panel-heading"><div><p class="overline">PRODUCTOS DEL DICCIONARIO CPE</p><h2>Elige el producto y la versión</h2></div><span class="counter" id="nvdCpeCounter"></span></div>
+        <p class="history-help">Selecciona la entrada exacta de tu producto. Las entradas obsoletas indican cuál las reemplaza.</p>
+        <div class="table-wrap"><table><thead><tr><th>PRODUCTO</th><th>VERSIÓN</th><th>NOMBRE CPE</th><th></th></tr></thead><tbody id="nvdCpeTable"></tbody></table></div>
+        <div class="button-row"><button class="secondary" type="button" id="nvdCpeMore" hidden>Cargar más productos</button></div>
+      </article>
+      <article class="panel nvd-panel" id="nvdResultsPanel" hidden>
+        <div class="panel-heading"><div><p class="overline">RESULTADOS</p><h2 id="nvdResultsTitle">Vulnerabilidades</h2></div><span class="counter" id="nvdCounter"></span></div>
+        <p class="history-help" id="nvdSelection"></p>
+        <div class="nvd-filters">
+          <label>Severidad<select id="nvdFilterSeverity"><option value="all">Todas</option><option value="CRITICAL">Crítica</option><option value="HIGH">Alta</option><option value="MEDIUM">Media</option><option value="LOW">Baja</option><option value="NONE">Ninguna (CVSS 0)</option><option value="unscored">Sin puntuación CVSS</option></select></label>
+          <label>Versión CVSS<select id="nvdFilterVersion"><option value="all">Cualquiera</option><option value="4.0">4.0</option><option value="3.1">3.1</option><option value="3.0">3.0</option><option value="2.0">2.0</option><option value="none">Sin métricas</option></select></label>
+          <label>Estado<select id="nvdFilterStatus"><option value="all">Todos</option><option value="active">No rechazadas</option><option value="pending">Pendientes o en análisis</option><option value="rejected">Rechazadas</option></select></label>
+          <label>Ordenar<select id="nvdSort"><option value="nvd">Orden de NVD</option><option value="published">Publicación más reciente</option><option value="modified">Modificación más reciente</option><option value="score">Puntuación más alta</option></select></label>
+          <label class="nvd-filter-text">Filtrar texto<input id="nvdFilterText" type="search" autocomplete="off" placeholder="Identificador o descripción"></label>
+        </div>
+        <p class="history-help">Los filtros se aplican a los resultados ya cargados en esta página.</p>
+        <div class="table-wrap nvd-table"><table><thead><tr><th>CVE</th><th>SEVERIDAD</th><th>ESTADO</th><th>PUBLICADA</th><th>MODIFICADA</th><th id="nvdApplicabilityHead" hidden>APLICABILIDAD</th></tr></thead><tbody id="nvdTable"></tbody></table></div>
+        <div class="button-row"><button class="secondary" type="button" id="nvdMore" hidden>Cargar más resultados</button></div>
+      </article>
+      <article class="panel history-detail nvd-detail" id="nvdDetail" hidden></article>
+    </section>
+
     <section class="view" data-view="diagnostico">
       <div class="section-heading"><div><p class="eyebrow">SENSOR Y MANTENIMIENTO</p><h2>Sistema</h2><p class="section-description">Usa estas funciones para revisar el sensor. Para instalar o actualizar el firmware usa <button class="link-button" data-view-target="instalar">Preparar ESP32</button>.</p></div><div class="button-row"><button class="ghost" id="flashButton" title="Compila e instala con Arduino CLI mediante INICIAR-VIGIA.bat (solo para desarrollo)">Helper local (desarrollo)</button><button class="ghost" id="clearButton">Limpiar consola</button></div></div>
       <div class="module-grid diagnostic-actions">
@@ -289,5 +341,6 @@
   <script src="app.js"></script>
   <script type="module" src="installer.js"></script>
   <script type="module" src="history.js"></script>
+  <script type="module" src="nvd.js"></script>
 </body>
 </html>

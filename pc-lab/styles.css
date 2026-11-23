@@ -656,3 +656,44 @@ button:focus-visible { outline-color: #111; }
   .history-compare-metrics { grid-template-columns: repeat(2, 1fr); }
   .history-row { grid-template-columns: 1fr; }
 }
+
+/* Vulnerabilidades documentadas (NVD) */
+.nvd-workspace > .panel { display: flex; flex-direction: column; gap: 12px; padding: 22px; }
+.nvd-workspace h2, .nvd-panel h2 { margin: 4px 0 0; }
+.nvd-notice strong { display: block; margin-bottom: 4px; color: var(--ink); }
+.nvd-form { display: grid; gap: 8px; }
+.nvd-form input[type="search"], .nvd-filters input, .nvd-filters select { width: 100%; padding: 10px 12px; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; background: #fff; font: inherit; }
+.nvd-option { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.nvd-option input { width: 17px; height: 17px; accent-color: #202020; }
+.nvd-status { margin: 0; padding: 10px 12px; border-left: 3px solid #202020; color: var(--ink); background: rgba(255,255,255,.6); font-size: 12px; }
+.nvd-status[data-kind="error"] { border-left-color: var(--danger); color: var(--danger); }
+.nvd-status[data-kind="loading"] { border-left-color: #737373; }
+.nvd-fetched { margin: 0; color: var(--muted); font-size: 11px; }
+.nvd-panel { margin-top: 16px; padding: 22px; }
+.nvd-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 10px; margin-top: 14px; }
+.nvd-filters label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.nvd-table { max-height: 620px; }
+.nvd-table td { vertical-align: top; }
+.nvd-summary { max-width: 560px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nvd-open { font-weight: 800; }
+.nvd-severity, .nvd-applicability { display: inline-flex; padding: 4px 8px; border-radius: 999px; color: #fff; background: #444; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.nvd-severity.critical { background: #5c1414; }
+.nvd-severity.high { background: #9c3131; }
+.nvd-severity.medium { background: #6d6250; }
+.nvd-severity.low { background: #2c5d34; }
+.nvd-severity.none { background: #6f6f6f; }
+.nvd-severity.unscored { color: var(--ink); background: transparent; border: 1px dashed #6f6f6f; }
+.nvd-applicability.applies { background: #9c3131; }
+.nvd-applicability.conditional { background: #6d6250; }
+.nvd-applicability.uncertain, .nvd-applicability.no_configurations { color: var(--ink); background: transparent; border: 1px dashed #6f6f6f; }
+.nvd-applicability.not_matched { background: #6f6f6f; }
+.history-tag.nvd-kev { background: #5c1414; }
+.nvd-description { margin: 14px 0 0; line-height: 1.55; }
+.nvd-list { display: grid; gap: 8px; margin: 10px 0 0; padding-left: 18px; font-size: 12px; line-height: 1.45; }
+.nvd-list a { overflow-wrap: anywhere; color: var(--ink); }
+.nvd-configurations h4 { margin: 6px 0 0; }
+.nvd-detail code, .nvd-panel code { overflow-wrap: anywhere; font: 11px "Cascadia Code", Consolas, monospace; }
+@media (max-width: 900px) {
+  .nvd-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nvd-filter-text { grid-column: 1 / -1; }
+}
