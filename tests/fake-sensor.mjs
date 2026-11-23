@@ -1,5 +1,7 @@
 // Puerto Web Serial simulado que responde con las mismas líneas JSON que el firmware 0.5.0 (VIGIA/2).
-export const FAKE_SERIAL = (bleFails) => `(() => {
+// Cada requestPort() entrega un sensor nuevo. Con secondSensorSilentInfo, el segundo sensor no responde a INFO
+// (simula otra placa que no entrega identidad) para comprobar que no se arrastra la del primero.
+export const FAKE_SERIAL = (bleFails, { secondSensorSilentInfo = false } = {}) => `(() => {
   const enc = new TextEncoder();
   const NL = String.fromCharCode(10);
   const responses = {
@@ -18,17 +20,21 @@ export const FAKE_SERIAL = (bleFails) => `(() => {
       '{"type":"ble_device","name":"Reloj","address":"11:22:33:44:55:66","address_type":"public","rssi":-50,"connectable":true,"scannable":true,"manufacturer_id":76,"manufacturer_data":"4C00","services":"180d","tx_power":127}',
       '{"type":"ble_scan_finished","count":1,"observed":1,"truncated":false}']`},
   };
-  let controller;
-  const port = {
-    readable: new ReadableStream({ start(c) { controller = c; } }),
-    writable: new WritableStream({ write(chunk) {
-      const command = new TextDecoder().decode(chunk).trim();
-      window.__commands = [...(window.__commands || []), command];
-      setTimeout(() => (responses[command] || ['{"type":"error","code":"unknown_command"}']).forEach(line => controller.enqueue(enc.encode(line + NL))), 30);
-    } }),
-    async open() { setTimeout(() => controller.enqueue(enc.encode('{"type":"ready","protocol":2,"firmware":"0.5.0-arduino","ble_ready":true}' + NL)), 10); },
-    async close() {}, getInfo() { return { usbVendorId: 0x10c4 }; },
+  let opened = 0;
+  const makePort = index => {
+    const silentInfo = ${secondSensorSilentInfo} && index === 2;
+    let controller;
+    return {
+      readable: new ReadableStream({ start(c) { controller = c; } }),
+      writable: new WritableStream({ write(chunk) {
+        const command = new TextDecoder().decode(chunk).trim();
+        window.__commands = [...(window.__commands || []), command];
+        const lines = silentInfo && command === 'INFO' ? [] : (responses[command] || ['{"type":"error","code":"unknown_command"}']);
+        setTimeout(() => lines.forEach(line => controller.enqueue(enc.encode(line + NL))), 30);
+      } }),
+      async open() { setTimeout(() => controller.enqueue(enc.encode('{"type":"ready","protocol":2,"firmware":"0.5.0-arduino","ble_ready":true}' + NL)), 10); },
+      async close() {}, getInfo() { return { usbVendorId: 0x10c4 }; },
+    };
   };
-  Object.defineProperty(navigator, 'serial', { configurable: true, value: { requestPort: async () => port, getPorts: async () => [], addEventListener() {} } });
+  Object.defineProperty(navigator, 'serial', { configurable: true, value: { requestPort: async () => makePort(++opened), getPorts: async () => [], addEventListener() {} } });
 })();`;
-

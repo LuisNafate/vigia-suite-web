@@ -183,6 +183,29 @@ test('flujo completo con sensor simulado: VIGIA/2, puntuación sin cambios y eva
   });
 });
 
+test('al conectar otro sensor no se arrastra la identidad ni la muestra del anterior', { skip, timeout: 90000 }, async () => {
+  await withBrowser({}, async page => {
+    await page.addInitScript(FAKE_SERIAL(false, { secondSensorSilentInfo: true }));
+    await runSimulatedAnalysis(page);
+    await page.waitFor(`document.querySelector('#historyViewCounter').textContent === '1 evaluación'`);
+    assert.equal(await page.evaluate(`document.querySelector('#detailMac').textContent`), '04:B2:47:82:60:1C');
+
+    await page.evaluate(`document.querySelector('#disconnectButton').click()`);
+    await page.waitFor(`document.querySelector('#statusCopy').textContent === 'Sensor desconectado.'`);
+    await page.evaluate(`window.__commands = []; document.querySelector('#connectButton').click()`);
+    await page.waitFor(`(window.__commands || []).includes('PING') && /Enlace validado/.test(document.querySelector('#statusCopy').textContent)`);
+    for (const id of ['detailBoard', 'detailChip', 'detailMac'])
+      assert.equal(await page.evaluate(`document.querySelector('#${id}').textContent`), '—', `${id} no debe mostrar el sensor anterior`);
+
+    // El segundo sensor no responde a INFO: la evaluación se interrumpe y no se guarda la muestra del primero.
+    await page.evaluate(`document.querySelector('#startAnalysisButton').click()`);
+    await page.waitFor(`/Análisis parcial/.test(document.querySelector('#analysisStage').textContent)`, 15000);
+    assert.equal(await page.evaluate(`document.querySelector('#metricNetworks').textContent`), '0');
+    await new Promise(resolve => setTimeout(resolve, 500));
+    assert.equal(await page.evaluate(`document.querySelector('#historyViewCounter').textContent`), '1 evaluación');
+  });
+});
+
 test('flujo con BLE fallido: la evaluación se guarda como incompleta', { skip, timeout: 90000 }, async () => {
   await withBrowser({}, async page => {
     await page.addInitScript(FAKE_SERIAL(true));

@@ -426,6 +426,9 @@ async function openPort(selectedPort) {
   port = selectedPort;
   await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
   lineBuffer = ''; sensorFirmware = null; sensorProtocol = null;
+  // Otro sensor puede usar este puerto: no se conserva nada de la identidad anterior.
+  identity = {};
+  for (const element of [elements.detailBoard, elements.detailChip, elements.detailMac, elements.detailFirmware]) element.textContent = '—';
   writer = port.writable.getWriter(); setConnected(true); elements.port.textContent = 'Puerto autorizado';
   elements.status.textContent = 'Puerto abierto. Validando firmware…'; log('Puerto serial abierto a 115200 8N1', 'web');
   readLoopPromise = readLoop(); await new Promise(resolve => setTimeout(resolve, 250)); await sendCommand('PING');
@@ -540,6 +543,9 @@ function renderAnalysis() {
 async function runFullAnalysis() {
   if (!writer || analysisRunning) return;
   analysisRunning = true; currentReport = null; elements.exportJson.disabled = true; elements.exportCsv.disabled = true;
+  // Igual que Android: la evaluación empieza sin resultados previos. Si INFO no responde, no se guarda de nuevo la
+  // muestra anterior (que podía ser de otro sensor) como una evaluación incompleta.
+  networks = []; bleDevices = []; wifiTruncated = null; bleTruncated = null; bleScanFailed = false; renderNetworks(); renderBleDevices();
   setConnected(true); showView('analisis'); elements.analysisProgress.hidden = false;
   try {
     elements.analysisStage.textContent = 'Validando identidad del sensor…'; await sendAndWait('INFO', 'identity', 4000);
