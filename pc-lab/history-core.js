@@ -172,14 +172,66 @@ export function selectExpired(assessments, policy, now = Date.now()) {
   return sorted.filter(item => expired.has(item.id)).map(item => item.id);
 }
 
-// Orden de robustez de los modos de autenticación del ESP32 (wifi_auth_mode_t). Desconocido = sin juicio.
-const AUTH_RANK = Object.freeze({ 0: 0, 1: 1, 2: 2, 4: 3, 3: 4, 8: 4, 5: 5, 7: 5, 6: 6 });
-export function authRank(auth) { return AUTH_RANK[auth] ?? null; }
-export function isAuthDowngrade(before, after) {
-  const from = authRank(before);
-  const to = authRank(after);
-  return from !== null && to !== null && to < from;
+/**
+ * wifi_auth_mode_t de ESP-IDF v5.5.5 (núcleo Arduino-ESP32 3.3.12 del firmware 0.5.0; el firmware envía el valor
+ * sin traducir). El número del modo no es un orden de seguridad: cada modo tiene una familia y, dentro de las
+ * familias personal y empresarial, un nivel de cifrado (2 = sólo TKIP, 3 = TKIP/CCMP mixto, 4 = WPA2,
+ * 5 = transición WPA2/WPA3, 6 = WPA3, 7 = WPA3 Suite B de 192 bits). WAPI y DPP no tienen nivel comparable.
+ * Debe coincidir con HistoryLogic.AUTH_MODES de Android (tests/fixtures/auth-change-cases.json).
+ */
+const AUTH_MODES = Object.freeze({
+  0: { family: 'open', level: null }, // OPEN
+  1: { family: 'wep', level: null }, // WEP
+  2: { family: 'personal', level: 2 }, // WPA_PSK
+  3: { family: 'personal', level: 4 }, // WPA2_PSK
+  4: { family: 'personal', level: 3 }, // WPA_WPA2_PSK
+  5: { family: 'enterprise', level: 4 }, // ENTERPRISE = WPA2_ENTERPRISE
+  6: { family: 'personal', level: 6 }, // WPA3_PSK
+  7: { family: 'personal', level: 5 }, // WPA2_WPA3_PSK
+  8: { family: 'wapi', level: null }, // WAPI_PSK
+  9: { family: 'owe', level: null }, // OWE
+  10: { family: 'enterprise', level: 7 }, // WPA3_ENT_192
+  11: { family: 'personal', level: 6 }, // WPA3_EXT_PSK (mismo resultado que WPA3_PSK según Espressif)
+  12: { family: 'personal', level: 6 }, // WPA3_EXT_PSK_MIXED_MODE (ídem)
+  13: { family: 'dpp', level: null }, // DPP
+  14: { family: 'enterprise', level: 6 }, // WPA3_ENTERPRISE
+  15: { family: 'enterprise', level: 5 }, // WPA2_WPA3_ENTERPRISE
+  16: { family: 'enterprise', level: 2 }, // WPA_ENTERPRISE
+});
+export function authMode(auth) { return Number.isInteger(auth) ? AUTH_MODES[auth] ?? null : null; }
+
+const withCredentialsAndCcmp = mode => mode.family === 'dpp' || (mode.level ?? 0) >= 4;
+const compareLevels = (from, to) => (to < from ? 'weaker' : to > from ? 'stronger' : 'equivalent');
+
+/**
+ * Cómo cambia la protección de un BSSID que pasa del modo `before` al modo `after`:
+ * 'weaker', 'stronger', 'equivalent' o 'unknown'. Sólo se declara un debilitamiento con evidencia técnica:
+ * pérdida de cifrado (abierta), cifrado roto (WEP), pérdida de credenciales (OWE frente a WPA2 o superior), un nivel menor dentro de la
+ * misma familia, o volver a admitir TKIP. Modos desconocidos y esquemas que no se ordenan entre sí (personal frente
+ * a empresarial con el mismo cifrado, WAPI, DPP) quedan en 'unknown'.
+ */
+export function authProtectionChange(before, after) {
+  const from = authMode(before);
+  const to = authMode(after);
+  if (!from || !to) return 'unknown';
+  if (before === after) return 'equivalent';
+  // Abierta (sin cifrado) < WEP (cifrado roto) < cualquier otro modo conocido.
+  if (to.family === 'open') return 'weaker';
+  if (from.family === 'open') return 'stronger';
+  if (to.family === 'wep') return 'weaker';
+  if (from.family === 'wep') return 'stronger';
+  // OWE cifra con CCMP sin autenticar. Frente a un modo con credenciales y cifrado igual o mejor (WPA2 o superior,
+  // DPP) es más débil; frente a WPA/TKIP o WAPI se gana cifrado y se pierden credenciales, y no se juzga.
+  if (to.family === 'owe') return withCredentialsAndCcmp(from) ? 'weaker' : 'unknown';
+  if (from.family === 'owe') return withCredentialsAndCcmp(to) ? 'stronger' : 'unknown';
+  if (from.level === null || to.level === null) return 'unknown';
+  if (from.family === to.family) return compareLevels(from.level, to.level);
+  // Personal frente a empresarial: sólo es comparable cuando uno admite TKIP (nivel 2-3) y el otro no.
+  if (to.level <= 3 && from.level >= 4) return 'weaker';
+  if (from.level <= 3 && to.level >= 4) return 'stronger';
+  return 'unknown';
 }
+export function isAuthDowngrade(before, after) { return authProtectionChange(before, after) === 'weaker'; }
 
 // Sólo una dirección BLE pública (tipo 0) es un identificador estable. Las aleatorias y las resolubles (RPA)
 // cambian con el tiempo, así que nunca se emparejan entre evaluaciones.
@@ -239,7 +291,8 @@ export function compareAssessments(left, right) {
       result.wifi.channelChanged.push({ bssid, before: previous, after: current }); changed = true;
     }
     if (previous.auth !== null && current.auth !== null && previous.auth !== current.auth) {
-      result.wifi.authChanged.push({ bssid, before: previous, after: current, downgrade: isAuthDowngrade(previous.auth, current.auth) }); changed = true;
+      const protection = authProtectionChange(previous.auth, current.auth);
+      result.wifi.authChanged.push({ bssid, before: previous, after: current, protection, downgrade: protection === 'weaker' }); changed = true;
     }
     if (previous.ssid !== null && current.ssid !== null && previous.ssid !== current.ssid) {
       result.wifi.renamed.push({ bssid, before: previous, after: current }); changed = true;
@@ -267,11 +320,13 @@ export function comparisonFindings(result) {
   const findings = [];
   const downgrades = result.wifi.authChanged.filter(change => change.downgrade);
   const newOpen = result.wifi.added.filter(item => item.auth === 0);
-  if (downgrades.length) findings.push({ severity: 'high', title: `${downgrades.length} red(es) redujeron su protección`, detail: 'El mismo BSSID anuncia ahora un cifrado más débil. Verifica la configuración del punto de acceso.' });
+  if (downgrades.length) findings.push({ severity: 'high', title: `${downgrades.length} red(es) redujeron su protección`, detail: 'El mismo BSSID anuncia ahora una protección más débil (menos cifrado, cifrado heredado o sin credenciales). Verifica la configuración del punto de acceso.' });
   if (result.wifi.ssidReuse.length) findings.push({ severity: 'medium', title: `${result.wifi.ssidReuse.length} BSSID nuevo(s) con un SSID ya conocido`, detail: 'Puede ser un AP adicional, una red mesh o un AP no autorizado. Valida ubicación y propietario antes de concluir.' });
   if (newOpen.length) findings.push({ severity: 'medium', title: `${newOpen.length} red(es) abierta(s) nueva(s)`, detail: 'Aparecieron redes sin cifrado que no estaban en la evaluación anterior.' });
-  const otherAuth = result.wifi.authChanged.length - downgrades.length;
+  const unrated = result.wifi.authChanged.filter(change => change.protection === 'unknown').length;
+  const otherAuth = result.wifi.authChanged.length - downgrades.length - unrated;
   if (otherAuth) findings.push({ severity: 'info', title: `${otherAuth} cambio(s) de autenticación sin pérdida de protección`, detail: 'El BSSID mantiene o mejora su cifrado.' });
+  if (unrated) findings.push({ severity: 'info', title: `${unrated} cambio(s) de autenticación sin calificar`, detail: 'El modo no es reconocido o los dos modos no se ordenan entre sí (personal y empresarial con el mismo cifrado, WAPI o DPP). Revísalo manualmente.' });
   if (result.wifi.channelChanged.length) findings.push({ severity: 'info', title: `${result.wifi.channelChanged.length} red(es) cambiaron de canal`, detail: 'Es habitual cuando el AP elige canal automáticamente.' });
   if (result.wifi.renamed.length) findings.push({ severity: 'info', title: `${result.wifi.renamed.length} red(es) cambiaron de nombre`, detail: 'Mismo BSSID con otro SSID: se trata como la misma red reconfigurada, no como una red nueva.' });
   return findings;
