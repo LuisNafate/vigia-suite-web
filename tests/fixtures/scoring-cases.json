@@ -1,0 +1,963 @@
+{
+  "description": "Casos de puntuación compartidos por vigia-suite-android (app/src/test/resources/scoring-cases.json) y vigia-suite-web (tests/fixtures/scoring-cases.json). Los dos archivos deben ser idénticos. wifi y ble usan los campos de los eventos wifi_ap y ble_device de VIGIA/2; un campo ausente no se envió.",
+  "formula": "min(40, abiertas×3) + min(25, abiertas con RSSI ≥ -70 × 5) + min(25, WEP/WPA × 12) + min(10, BLE cercano (≥ -65), conectable y sin dirección aleatoria × 2) + 10 si ≥ 25 % abiertas + 5 si un canal tiene ≥ 12 redes; máximo 100. ALTO ≥ 60, MEDIO ≥ 30.",
+  "cases": [
+    {
+      "name": "sin observaciones",
+      "why": "Nada que puntuar.",
+      "wifi": [],
+      "ble": [],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "muestra del sensor simulado",
+      "why": "1 abierta (3) + abierta cercana (5) + WEP (12) + 33 % abiertas (10) + BLE público conectable cercano (2).",
+      "wifi": [
+        {
+          "ssid": "Cafe",
+          "rssi": -50,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Casa",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "",
+          "rssi": -80,
+          "channel": 11,
+          "auth": 1,
+          "bssid": "AA:AA:AA:AA:00:03"
+        }
+      ],
+      "ble": [
+        {
+          "name": "Disp1",
+          "address": "11:22:33:44:00:01",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 32,
+        "level": "MEDIO"
+      }
+    },
+    {
+      "name": "11 redes en un canal no suman congestión",
+      "why": "El canal 6 tiene 11 redes: por debajo del umbral de 12.",
+      "wifi": [
+        {
+          "ssid": "Red0",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:00"
+        },
+        {
+          "ssid": "Red1",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:03"
+        },
+        {
+          "ssid": "Red4",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:04"
+        },
+        {
+          "ssid": "Red5",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:05"
+        },
+        {
+          "ssid": "Red6",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:06"
+        },
+        {
+          "ssid": "Red7",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:07"
+        },
+        {
+          "ssid": "Red8",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:08"
+        },
+        {
+          "ssid": "Red9",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:09"
+        },
+        {
+          "ssid": "Red10",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:0A"
+        },
+        {
+          "ssid": "Red11",
+          "rssi": -60,
+          "channel": 1,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:0B"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "12 redes en un canal suman congestión",
+      "why": "Regla de congestión: un canal con 12 o más redes suma 5.",
+      "wifi": [
+        {
+          "ssid": "Red0",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:00"
+        },
+        {
+          "ssid": "Red1",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:03"
+        },
+        {
+          "ssid": "Red4",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:04"
+        },
+        {
+          "ssid": "Red5",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:05"
+        },
+        {
+          "ssid": "Red6",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:06"
+        },
+        {
+          "ssid": "Red7",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:07"
+        },
+        {
+          "ssid": "Red8",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:08"
+        },
+        {
+          "ssid": "Red9",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:09"
+        },
+        {
+          "ssid": "Red10",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:0A"
+        },
+        {
+          "ssid": "Red11",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:0B"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 5,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "congestión con 25 % de redes abiertas lejanas",
+      "why": "3 abiertas (9) + 25 % abiertas (10) + 12 redes en el canal 11 (5); ninguna abierta supera -70 dBm.",
+      "wifi": [
+        {
+          "ssid": "Red0",
+          "rssi": -75,
+          "channel": 11,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:00"
+        },
+        {
+          "ssid": "Red1",
+          "rssi": -75,
+          "channel": 11,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": -75,
+          "channel": 11,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:03"
+        },
+        {
+          "ssid": "Red4",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:04"
+        },
+        {
+          "ssid": "Red5",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:05"
+        },
+        {
+          "ssid": "Red6",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:06"
+        },
+        {
+          "ssid": "Red7",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:07"
+        },
+        {
+          "ssid": "Red8",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:08"
+        },
+        {
+          "ssid": "Red9",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:09"
+        },
+        {
+          "ssid": "Red10",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:0A"
+        },
+        {
+          "ssid": "Red11",
+          "rssi": -60,
+          "channel": 11,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:0B"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 24,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "todas las reglas y el tope de 100",
+      "why": "40 + 25 + 25 + 10 (BLE) + 10 (proporción) + 5 (canal 1 con 20 redes) = 115, limitado a 100.",
+      "wifi": [
+        {
+          "ssid": "Red0",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:00"
+        },
+        {
+          "ssid": "Red1",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:03"
+        },
+        {
+          "ssid": "Red4",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:04"
+        },
+        {
+          "ssid": "Red5",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:05"
+        },
+        {
+          "ssid": "Red6",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:06"
+        },
+        {
+          "ssid": "Red7",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:07"
+        },
+        {
+          "ssid": "Red8",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:08"
+        },
+        {
+          "ssid": "Red9",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:09"
+        },
+        {
+          "ssid": "Red10",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:0A"
+        },
+        {
+          "ssid": "Red11",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:0B"
+        },
+        {
+          "ssid": "Red12",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:0C"
+        },
+        {
+          "ssid": "Red13",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:0D"
+        },
+        {
+          "ssid": "Red14",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:0E"
+        },
+        {
+          "ssid": "Red15",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:0F"
+        },
+        {
+          "ssid": "Red16",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:10"
+        },
+        {
+          "ssid": "Red17",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:11"
+        },
+        {
+          "ssid": "Red18",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:12"
+        },
+        {
+          "ssid": "Red19",
+          "rssi": -40,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:13"
+        },
+        {
+          "ssid": "Red20",
+          "rssi": -70,
+          "channel": 6,
+          "auth": 1,
+          "bssid": "AA:AA:AA:AA:00:14"
+        },
+        {
+          "ssid": "Red21",
+          "rssi": -70,
+          "channel": 6,
+          "auth": 1,
+          "bssid": "AA:AA:AA:AA:00:15"
+        },
+        {
+          "ssid": "Red22",
+          "rssi": -70,
+          "channel": 6,
+          "auth": 1,
+          "bssid": "AA:AA:AA:AA:00:16"
+        },
+        {
+          "ssid": "Red23",
+          "rssi": -70,
+          "channel": 6,
+          "auth": 1,
+          "bssid": "AA:AA:AA:AA:00:17"
+        },
+        {
+          "ssid": "Red24",
+          "rssi": -70,
+          "channel": 6,
+          "auth": 1,
+          "bssid": "AA:AA:AA:AA:00:18"
+        }
+      ],
+      "ble": [
+        {
+          "name": "Disp0",
+          "address": "11:22:33:44:00:00",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Disp1",
+          "address": "11:22:33:44:00:01",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Disp2",
+          "address": "11:22:33:44:00:02",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Disp3",
+          "address": "11:22:33:44:00:03",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Disp4",
+          "address": "11:22:33:44:00:04",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Disp5",
+          "address": "11:22:33:44:00:05",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 100,
+        "level": "ALTO"
+      }
+    },
+    {
+      "name": "diez redes abiertas cercanas",
+      "why": "10 abiertas (30) + abiertas cercanas (25, tope) + 100 % abiertas (10).",
+      "wifi": [
+        {
+          "ssid": "Red0",
+          "rssi": -55,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:00"
+        },
+        {
+          "ssid": "Red1",
+          "rssi": -55,
+          "channel": 2,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": -55,
+          "channel": 3,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -55,
+          "channel": 4,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:03"
+        },
+        {
+          "ssid": "Red4",
+          "rssi": -55,
+          "channel": 5,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:04"
+        },
+        {
+          "ssid": "Red5",
+          "rssi": -55,
+          "channel": 6,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:05"
+        },
+        {
+          "ssid": "Red6",
+          "rssi": -55,
+          "channel": 7,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:06"
+        },
+        {
+          "ssid": "Red7",
+          "rssi": -55,
+          "channel": 8,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:07"
+        },
+        {
+          "ssid": "Red8",
+          "rssi": -55,
+          "channel": 9,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:08"
+        },
+        {
+          "ssid": "Red9",
+          "rssi": -55,
+          "channel": 10,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:09"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 65,
+        "level": "ALTO"
+      }
+    },
+    {
+      "name": "límite de -70 dBm para abierta cercana",
+      "why": "2 abiertas (6) + 1 cercana a -70 dBm exactos (5) + 50 % abiertas (10).",
+      "wifi": [
+        {
+          "ssid": "Red1",
+          "rssi": -70,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": -71,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:03"
+        },
+        {
+          "ssid": "Red4",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:04"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 21,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "modos 9 a 16 no puntúan",
+      "why": "OWE, WPA3 y Enterprise no son abiertos ni débiles en la fórmula actual.",
+      "wifi": [
+        {
+          "ssid": "Red9",
+          "rssi": -50,
+          "channel": 1,
+          "auth": 9,
+          "bssid": "AA:AA:AA:AA:00:09"
+        },
+        {
+          "ssid": "Red10",
+          "rssi": -50,
+          "channel": 2,
+          "auth": 10,
+          "bssid": "AA:AA:AA:AA:00:0A"
+        },
+        {
+          "ssid": "Red11",
+          "rssi": -50,
+          "channel": 3,
+          "auth": 11,
+          "bssid": "AA:AA:AA:AA:00:0B"
+        },
+        {
+          "ssid": "Red12",
+          "rssi": -50,
+          "channel": 4,
+          "auth": 12,
+          "bssid": "AA:AA:AA:AA:00:0C"
+        },
+        {
+          "ssid": "Red13",
+          "rssi": -50,
+          "channel": 5,
+          "auth": 13,
+          "bssid": "AA:AA:AA:AA:00:0D"
+        },
+        {
+          "ssid": "Red14",
+          "rssi": -50,
+          "channel": 6,
+          "auth": 14,
+          "bssid": "AA:AA:AA:AA:00:0E"
+        },
+        {
+          "ssid": "Red15",
+          "rssi": -50,
+          "channel": 7,
+          "auth": 15,
+          "bssid": "AA:AA:AA:AA:00:0F"
+        },
+        {
+          "ssid": "Red16",
+          "rssi": -50,
+          "channel": 8,
+          "auth": 16,
+          "bssid": "AA:AA:AA:AA:00:10"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "privacidad BLE",
+      "why": "Cuentan public_identity a -60 y public a -65 (conectables, no aleatorias): 2 × 2.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "Disp1",
+          "address": "11:22:33:44:00:01",
+          "address_type": "random",
+          "rssi": -40,
+          "connectable": true
+        },
+        {
+          "name": "Disp2",
+          "address": "11:22:33:44:00:02",
+          "address_type": "random_identity",
+          "rssi": -40,
+          "connectable": true
+        },
+        {
+          "name": "Disp3",
+          "address": "11:22:33:44:00:03",
+          "address_type": "public",
+          "rssi": -40,
+          "connectable": false
+        },
+        {
+          "name": "Disp4",
+          "address": "11:22:33:44:00:04",
+          "address_type": "public_identity",
+          "rssi": -60,
+          "connectable": true
+        },
+        {
+          "name": "Disp5",
+          "address": "11:22:33:44:00:05",
+          "address_type": "public",
+          "rssi": -70,
+          "connectable": true
+        },
+        {
+          "name": "Disp6",
+          "address": "11:22:33:44:00:06",
+          "address_type": "public",
+          "rssi": -65,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 4,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "campos ausentes no generan alertas",
+      "why": "Sin autenticación, RSSI ni canal: no hay redes abiertas ni dispositivos cercanos.",
+      "wifi": [
+        {
+          "ssid": "Red0",
+          "bssid": "AA:AA:AA:AA:00:00"
+        },
+        {
+          "ssid": "Red1",
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "bssid": "AA:AA:AA:AA:00:03"
+        }
+      ],
+      "ble": [
+        {
+          "name": "Disp1",
+          "address": "11:22:33:44:00:01",
+          "address_type": "public",
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "campos nulos o en texto no generan alertas",
+      "why": "null, texto, decimales y booleanos son inválidos: nunca equivalen a 0 (red abierta) ni a 0 dBm.",
+      "wifi": [
+        {
+          "ssid": "Red1",
+          "rssi": null,
+          "channel": null,
+          "auth": null,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": "-40",
+          "channel": "6",
+          "auth": "0",
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -40.5,
+          "channel": 6.5,
+          "auth": 0.5,
+          "bssid": "AA:AA:AA:AA:00:03"
+        },
+        {
+          "ssid": "Red4",
+          "rssi": true,
+          "channel": false,
+          "auth": false,
+          "bssid": "AA:AA:AA:AA:00:04"
+        }
+      ],
+      "ble": [
+        {
+          "name": "Disp1",
+          "address": "11:22:33:44:00:01",
+          "address_type": "public",
+          "rssi": null,
+          "connectable": true
+        },
+        {
+          "name": "Disp2",
+          "address": "11:22:33:44:00:02",
+          "address_type": "public",
+          "rssi": "-40",
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "red abierta sin RSSI",
+      "why": "1 abierta (3) + 50 % abiertas (10); sin RSSI no es abierta cercana.",
+      "wifi": [
+        {
+          "ssid": "Red1",
+          "rssi": null,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "AA:AA:AA:AA:00:02"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 13,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "valores fuera de rango",
+      "why": "Las dos primeras quedan sin datos; sólo la tercera es abierta y cercana: 3 + 5 + 33 % abiertas (10).",
+      "wifi": [
+        {
+          "ssid": "Red1",
+          "rssi": -200,
+          "channel": 0,
+          "auth": -1,
+          "bssid": "AA:AA:AA:AA:00:01"
+        },
+        {
+          "ssid": "Red2",
+          "rssi": 25,
+          "channel": 197,
+          "auth": 256,
+          "bssid": "AA:AA:AA:AA:00:02"
+        },
+        {
+          "ssid": "Red3",
+          "rssi": -50,
+          "channel": 1,
+          "auth": 0,
+          "bssid": "AA:AA:AA:AA:00:03"
+        }
+      ],
+      "ble": [
+        {
+          "name": "Disp1",
+          "address": "11:22:33:44:00:01",
+          "address_type": "public",
+          "rssi": 30,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 18,
+        "level": "BAJO"
+      }
+    }
+  ]
+}

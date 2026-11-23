@@ -15,3 +15,13 @@ export async function loadFieldFilter() {
     .map(pattern => pick(app, pattern)).join('\n');
   return new Function(`${source}; return { WIFI_FIELDS, BLE_FIELDS, withValidFields };`)();
 }
+
+/**
+ * Cálculo de renderAnalysis() desde `const total` hasta el nivel, sin tocar el DOM. Recibe los arrays que app.js
+ * guarda en `networks` y `bleDevices` (ya filtrados por withValidFields) y devuelve { score, level }.
+ */
+export async function loadScoring() {
+  const app = await appSource();
+  const source = pick(app, /const total = networks\.length;[\s\S]*?const level = [^\n]*/);
+  return new Function('networks', 'bleDevices', `${source}; return { score, level };`);
+}
