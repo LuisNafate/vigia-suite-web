@@ -50,6 +50,11 @@ let currentReport = null;
 let scanHistory = [];
 let wifiFilter = 'all';
 let bleFilter = 'all';
+// Metadatos que el historial necesita y que el protocolo ya entrega (ready, protocol, truncated).
+let sensorFirmware = null;
+let sensorProtocol = null;
+let wifiTruncated = null;
+let bleTruncated = null;
 const eventWaiters = new Map();
 const HISTORY_KEY = 'vigia-suite-analysis-history-v1';
 const WIFI_BASELINE_KEY = 'vigia-suite-wifi-baseline-v1';
@@ -267,6 +272,8 @@ function loadHistory() {
 }
 
 function renderHistory() {
+  // Con IndexedDB disponible, history.js dibuja este panel a partir del historial completo.
+  if (window.VigiaHistory?.isReady()) { window.VigiaHistory.refresh(); return; }
   elements.historyCounter.textContent = `${scanHistory.length} ${scanHistory.length === 1 ? 'sesión' : 'sesiones'}`;
   elements.clearHistory.disabled = scanHistory.length === 0;
   if (!scanHistory.length) { elements.historyList.innerHTML = '<p class="empty-copy">Aún no hay análisis guardados.</p>'; return; }
@@ -277,11 +284,28 @@ function renderHistory() {
   </div>`).join('');
 }
 
-function saveCurrentReport() {
-  if (!currentReport) return;
+function sensorSnapshot() {
+  // Sólo lo que el sensor informó; lo desconocido queda en null para no presentar valores supuestos.
+  return { board: identity.board ?? null, chip: identity.chip ?? null, mac: identity.mac ? macLabel(identity.mac) : null, firmware: sensorFirmware, protocol: sensorProtocol };
+}
+
+// Resumen en localStorage: comportamiento original, usado si IndexedDB no está disponible o falla.
+function saveSummaryToLocalStorage() {
   scanHistory = [{ ...currentReport, wifiNetworks: undefined, bleDevices: undefined }, ...scanHistory].slice(0, 20);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(scanHistory));
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(scanHistory)); }
+  catch (error) { log(`No se pudo guardar el resumen local: ${error.message}`, 'error'); return false; }
   renderHistory();
+  return true;
+}
+
+async function saveCurrentReport(status = 'complete') {
+  if (!currentReport) return false;
+  const history = window.VigiaHistory;
+  if (history?.isReady()) {
+    try { await history.saveReport(currentReport, { status, sensor: sensorSnapshot() }); return true; }
+    catch (error) { log(`No se pudo guardar la evaluación completa: ${error.message}. Se guarda sólo el resumen.`, 'error'); }
+  }
+  return saveSummaryToLocalStorage();
 }
 
 function downloadBlob(filename, type, text) {
@@ -327,8 +351,8 @@ function handleLine(rawLine) {
   log(line);
   try {
     const event = JSON.parse(line);
-    if (event.protocol) elements.protocol.textContent = `VIGIA/${event.protocol}`;
-    if (event.type === 'ready') { elements.detailFirmware.textContent = event.firmware; elements.status.textContent = `Firmware ${event.firmware} listo.`; }
+    if (event.protocol) { elements.protocol.textContent = `VIGIA/${event.protocol}`; sensorProtocol = Number(event.protocol) || null; }
+    if (event.type === 'ready') { sensorFirmware = event.firmware || null; elements.detailFirmware.textContent = event.firmware; elements.status.textContent = `Firmware ${event.firmware} listo.`; }
     if (event.type === 'pong') elements.status.textContent = 'Enlace validado correctamente.';
     if (event.type === 'identity') {
       identity = event; elements.detailBoard.textContent = event.board; elements.detailChip.textContent = event.chip; elements.detailMac.textContent = macLabel(event.mac) || '—';
@@ -339,9 +363,9 @@ function handleLine(rawLine) {
       elements.detailUptime.textContent = `${Math.round(event.uptime_ms / 1000)} segundos`;
       elements.status.textContent = `Memoria libre: ${event.heap_free.toLocaleString('es-MX')} bytes · Activo: ${Math.round(event.uptime_ms / 1000)} s`;
     }
-    if (event.type === 'wifi_scan_started') { networks = []; renderNetworks(); elements.status.textContent = 'Analizando redes Wi-Fi…'; }
+    if (event.type === 'wifi_scan_started') { networks = []; wifiTruncated = null; renderNetworks(); elements.status.textContent = 'Analizando redes Wi-Fi…'; }
     if (event.type === 'wifi_ap') { networks.push(event); renderNetworks(); }
-    if (event.type === 'wifi_scan_finished') { elements.status.textContent = `Wi-Fi finalizado: ${event.count} redes detectadas.`; renderAnalysis(); }
+    if (event.type === 'wifi_scan_finished') { wifiTruncated = typeof event.truncated === 'boolean' ? event.truncated : null; elements.status.textContent = `Wi-Fi finalizado: ${event.count} redes detectadas.`; renderAnalysis(); }
     if (event.type === 'deauth_monitor_started') {
       elements.deauthResult.textContent = `Monitor pasivo activo durante ${event.duration_s || 8} segundos…`;
       elements.packetResult.textContent = `Observando metadatos 802.11 durante ${event.duration_s || 8} segundos…`;
@@ -358,7 +382,7 @@ function handleLine(rawLine) {
       elements.packetMonitor.disabled = !writer;
       elements.status.textContent = 'Monitoreo defensivo finalizado.';
     }
-    if (event.type === 'ble_scan_started') { bleDevices = []; bleScanFailed = false; renderBleDevices(); elements.status.textContent = 'Analizando Bluetooth LE…'; }
+    if (event.type === 'ble_scan_started') { bleDevices = []; bleScanFailed = false; bleTruncated = null; renderBleDevices(); elements.status.textContent = 'Analizando Bluetooth LE…'; }
     if (event.type === 'ble_status') elements.status.textContent = event.ready ? 'Bluetooth LE disponible y listo.' : 'Bluetooth LE no pudo inicializarse.';
     if (event.type === 'ble_device') {
       const existing = bleDevices.findIndex(device => device.address === event.address);
@@ -367,6 +391,7 @@ function handleLine(rawLine) {
     }
     if (event.type === 'ble_scan_finished') {
       bleScanFailed = event.failed === true;
+      bleTruncated = typeof event.truncated === 'boolean' ? event.truncated : null;
       elements.status.textContent = bleScanFailed ? 'El inventario Bluetooth no pudo completarse.' : `Bluetooth finalizado: ${event.count} dispositivos únicos detectados.`;
       if (bleScanFailed) elements.bleSummary.textContent = 'El firmware reportó un fallo en el módulo BLE.';
       renderAnalysis();
@@ -400,7 +425,7 @@ async function readLoop() {
 async function openPort(selectedPort) {
   port = selectedPort;
   await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-  lineBuffer = '';
+  lineBuffer = ''; sensorFirmware = null; sensorProtocol = null;
   writer = port.writable.getWriter(); setConnected(true); elements.port.textContent = 'Puerto autorizado';
   elements.status.textContent = 'Puerto abierto. Validando firmware…'; log('Puerto serial abierto a 115200 8N1', 'web');
   readLoopPromise = readLoop(); await new Promise(resolve => setTimeout(resolve, 250)); await sendCommand('PING');
@@ -503,8 +528,8 @@ function renderAnalysis() {
   currentReport = {
     schema: 'vigia-suite-report/1', createdAt: new Date().toISOString(), score, level,
     sensor: { board: identity.board || 'NodeMCU ESP-32S', chip: identity.chip || 'ESP32', mac: macLabel(identity.mac), firmware: elements.detailFirmware.textContent, protocol: elements.protocol.textContent },
-    wifi: { total, open: open.length, legacy: weak.length, hidden: hidden.length, busiestChannel: busiest ? Number(busiest[0]) : null, busiestCount: busiest ? Number(busiest[1]) : 0 },
-    bluetooth: { total: bleDevices.length, nearby: nearbyBle.length, connectable: connectableBle.length, stableNearby: stableNearbyBle.length, scanFailed: bleScanFailed },
+    wifi: { total, open: open.length, legacy: weak.length, hidden: hidden.length, busiestChannel: busiest ? Number(busiest[0]) : null, busiestCount: busiest ? Number(busiest[1]) : 0, truncated: wifiTruncated },
+    bluetooth: { total: bleDevices.length, nearby: nearbyBle.length, connectable: connectableBle.length, stableNearby: stableNearbyBle.length, scanFailed: bleScanFailed, truncated: bleTruncated },
     wifiNetworks: networks.map(item => ({ ...item })), bleDevices: bleDevices.map(item => ({ ...item })),
     disclaimer: 'Observación pasiva local. Un hallazgo no demuestra por sí mismo una vulnerabilidad explotable.'
   };
@@ -519,11 +544,15 @@ async function runFullAnalysis() {
   try {
     elements.analysisStage.textContent = 'Validando identidad del sensor…'; await sendAndWait('INFO', 'identity', 4000);
     elements.analysisStage.textContent = 'Midiendo estado y memoria…'; await sendAndWait('STATUS', 'status', 4000);
-    elements.analysisStage.textContent = 'Inventariando redes Wi-Fi…'; await sendAndWait('SCAN_WIFI', 'wifi_scan_finished', 15000);
-    elements.analysisStage.textContent = 'Inventariando dispositivos Bluetooth…'; await sendAndWait('SCAN_BLE', 'ble_scan_finished', 12000);
-    renderAnalysis(); saveCurrentReport(); elements.analysisStage.textContent = 'Análisis finalizado y guardado localmente.';
+    elements.analysisStage.textContent = 'Inventariando redes Wi-Fi…'; const wifiResult = await sendAndWait('SCAN_WIFI', 'wifi_scan_finished', 15000);
+    elements.analysisStage.textContent = 'Inventariando dispositivos Bluetooth…'; const bleResult = await sendAndWait('SCAN_BLE', 'ble_scan_finished', 12000);
+    renderAnalysis();
+    const saved = await saveCurrentReport(wifiResult?.failed || bleResult?.failed ? 'partial' : 'complete');
+    elements.analysisStage.textContent = saved ? 'Análisis finalizado y guardado localmente.' : 'Análisis finalizado, pero no se pudo guardar en este navegador.';
   } catch (error) {
     log(error.message, 'error'); elements.analysisStage.textContent = 'Análisis parcial: revisa el módulo indicado.'; renderAnalysis();
+    // Una evaluación interrumpida con datos se conserva marcada como incompleta.
+    if (currentReport) await saveCurrentReport('partial');
   } finally {
     setTimeout(() => { elements.analysisProgress.hidden = true; }, 1200);
     analysisRunning = false; setConnected(true);
@@ -570,7 +599,11 @@ elements.bleFilters.forEach(button => button.addEventListener('click', () => {
   bleFilter = button.dataset.bleFilter; elements.bleFilters.forEach(item => item.classList.toggle('active', item === button)); renderBleDevices();
 }));
 elements.exportJson.addEventListener('click', downloadJson); elements.exportCsv.addEventListener('click', downloadCsv);
-elements.clearHistory.addEventListener('click', () => { scanHistory = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); });
+elements.clearHistory.addEventListener('click', () => {
+  if (window.VigiaHistory?.isReady()) { window.VigiaHistory.requestClearAll(); return; }
+  if (!window.confirm('¿Eliminar todos los resúmenes guardados en este navegador? No se puede deshacer.')) return;
+  scanHistory = []; try { localStorage.removeItem(HISTORY_KEY); } catch {} renderHistory();
+});
 elements.clear.addEventListener('click', () => { elements.terminal.textContent = `[${timestamp()}] [sistema] Consola limpia.`; });
 elements.hiddenInspector?.addEventListener('click', inspectHiddenAps);
 elements.saveBaseline?.addEventListener('click', saveWifiBaseline);
@@ -607,6 +640,8 @@ window.VigiaApp = Object.freeze({
   connectPort: selectedPort => connect(selectedPort),
   showView: name => showView(name),
   log: (message, kind = 'instalador') => log(message, kind),
+  // Etiquetas de presentación para history.js: el historial muestra los datos con los mismos textos que el dashboard.
+  labels: Object.freeze({ authLabel, addressTypeLabel, manufacturerLabel }),
 });
 
 (async () => {
