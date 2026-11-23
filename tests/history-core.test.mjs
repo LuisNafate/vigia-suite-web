@@ -30,6 +30,17 @@ test('buildAssessment conserva los campos del protocolo y marca lo desconocido c
   assert.equal(Object.keys(result.wifi[0]).includes('password'), false);
 });
 
+test('una autenticación, RSSI o canal en texto o fuera de rango se guarda como no informado, nunca como red abierta', () => {
+  const result = core.buildAssessment({ id: 'X', createdAt: 1000, score: 0, level: 'BAJO',
+    wifiNetworks: [ap('AA:AA:AA:AA:AA:01', { auth: '0', rssi: '-40', channel: '6' }), ap('AA:AA:AA:AA:AA:02', { auth: undefined, rssi: null, channel: 0 }),
+      ap('AA:AA:AA:AA:AA:03', { auth: 0.5, rssi: true, channel: 6.5 }), ap('AA:AA:AA:AA:AA:04', { auth: 16 })],
+    bleDevices: [ble('11:22:33:44:55:66', { rssi: '-50' })] });
+  assert.deepEqual(result.wifi.map(item => [item.auth, item.rssi, item.channel]), [[null, null, null], [null, null, null], [null, null, null], [16, -60, 6]]);
+  assert.equal(result.assessment.wifiOpen, 0);
+  assert.equal(result.ble[0].rssi, null);
+  assert.equal(result.assessment.bleNearby, 0);
+});
+
 test('buildAssessment no inventa la identidad del sensor ni acepta datos inválidos', () => {
   const result = core.buildAssessment({ id: 'x', createdAt: Date.now(), score: 0, level: 'BAJO', sensor: { firmware: '—', protocol: 'Pendiente' } });
   assert.deepEqual(result.assessment.sensor, { board: null, chip: null, mac: null, firmware: null, protocol: null });

@@ -89,6 +89,24 @@ test('macLabel muestra la MAC real tanto del firmware nuevo como del antiguo', a
   assert.equal(macLabel('no-aplica'), 'no-aplica');
 });
 
+test('authLabel muestra los modos 0-16 del núcleo 3.3.12 y nunca presenta un valor inválido como abierta', async () => {
+  const app = await read('pc-lab/app.js');
+  const table = app.match(/const AUTH_LABELS = \[[\s\S]*?\];/)[0];
+  const source = app.match(/function authLabel\(value\) \{[\s\S]*?^\}/m)[0];
+  const authLabel = new Function(`${table}; ${source}; return authLabel;`)();
+  assert.deepEqual(Array.from({ length: 17 }, (_, mode) => authLabel(mode)), [
+    'Abierta', 'WEP', 'WPA-PSK', 'WPA2-PSK', 'WPA/WPA2', 'WPA2 Enterprise', 'WPA3-PSK', 'WPA2/WPA3', 'WAPI',
+    'OWE', 'WPA3 Enterprise 192 bits', 'WPA3-PSK (EXT)', 'WPA3-PSK mixto (EXT)', 'DPP', 'WPA3 Enterprise', 'WPA2/WPA3 Enterprise', 'WPA Enterprise',
+  ]);
+  assert.equal(authLabel(17), 'Modo 17 no reconocido');
+  for (const invalid of [undefined, null, '0', '3', 0.5, -1, 256, true, NaN]) assert.equal(authLabel(invalid), 'No informada', String(invalid));
+});
+
+test('el filtro «protegidas» no incluye redes sin autenticación informada', async () => {
+  const app = await read('pc-lab/app.js');
+  assert.match(app, /wifiFilter === 'protected' && Number\.isInteger\(network\.auth\) && network\.auth !== 0/);
+});
+
 test('history.js se carga como módulo después de app.js y el service worker lo incluye', async () => {
   const html = await read('pc-lab/dashboard.html');
   assert.match(html, /<script type="module" src="history.js"><\/script>/);

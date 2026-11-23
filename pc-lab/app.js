@@ -108,8 +108,13 @@ function updateJourney(connected = Boolean(writer)) {
   }
 }
 
+// wifi_auth_mode_t del núcleo esp32 3.3.12 (firmware/build-config.json). Sólo un número entero es un modo: un campo
+// ausente o inválido se muestra como «No informada» y nunca como red abierta (igual que en Android).
+const AUTH_LABELS = ['Abierta', 'WEP', 'WPA-PSK', 'WPA2-PSK', 'WPA/WPA2', 'WPA2 Enterprise', 'WPA3-PSK', 'WPA2/WPA3', 'WAPI',
+  'OWE', 'WPA3 Enterprise 192 bits', 'WPA3-PSK (EXT)', 'WPA3-PSK mixto (EXT)', 'DPP', 'WPA3 Enterprise', 'WPA2/WPA3 Enterprise', 'WPA Enterprise'];
 function authLabel(value) {
-  return ({ 0: 'Abierta', 1: 'WEP', 2: 'WPA-PSK', 3: 'WPA2-PSK', 4: 'WPA/WPA2', 5: 'WPA2 Enterprise', 6: 'WPA3-PSK', 7: 'WPA2/WPA3', 8: 'WAPI' })[value] ?? `Modo ${value}`;
+  if (!Number.isInteger(value) || value < 0 || value > 255) return 'No informada';
+  return AUTH_LABELS[value] ?? `Modo ${value} no reconocido`;
 }
 
 // El firmware 0.5.0 publica la MAC de fabrica en notacion estandar. Las versiones
@@ -135,7 +140,7 @@ function escapeHtml(value) {
 
 function renderNetworks() {
   const openCount = networks.filter(network => network.auth === 0).length;
-  const visible = networks.filter(network => wifiFilter === 'all' || (wifiFilter === 'open' && network.auth === 0) || (wifiFilter === 'protected' && network.auth !== 0) || (wifiFilter === 'nearby' && network.rssi >= -65));
+  const visible = networks.filter(network => wifiFilter === 'all' || (wifiFilter === 'open' && network.auth === 0) || (wifiFilter === 'protected' && Number.isInteger(network.auth) && network.auth !== 0) || (wifiFilter === 'nearby' && network.rssi >= -65));
   elements.counter.textContent = `${visible.length} de ${networks.length} redes`;
   elements.wifiBadge.textContent = networks.length;
   elements.wifiSummary.textContent = networks.length ? `${openCount} abiertas · ${networks.length - openCount} protegidas` : 'Sin resultados.';

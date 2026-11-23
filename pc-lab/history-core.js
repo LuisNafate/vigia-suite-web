@@ -20,6 +20,9 @@ const intOrNull = (value, min, max) => {
   const number = Number(value);
   return Number.isInteger(number) && number >= min && number <= max ? number : null;
 };
+// Campos de una observación del sensor: sólo un número JSON entero. Un texto como "0" no es un modo válido y no debe
+// convertirse en «red abierta» (mismo criterio que el parser de Android y que el panel, que compara con === 0).
+const observedInt = (value, min, max) => (typeof value === 'number' ? intOrNull(value, min, max) : null);
 const boolOrNull = value => (typeof value === 'boolean' ? value : null);
 const textOrNull = value => {
   if (value === null || value === undefined) return null;
@@ -38,9 +41,9 @@ export function normalizeWifiObservation(raw = {}) {
   return {
     ssid: typeof raw.ssid === 'string' ? raw.ssid : null,
     bssid: normalizeMac(raw.bssid),
-    channel: intOrNull(raw.channel, 1, 196),
-    rssi: intOrNull(raw.rssi, -127, 20),
-    auth: intOrNull(raw.auth, 0, 255),
+    channel: observedInt(raw.channel, 1, 196),
+    rssi: observedInt(raw.rssi, -127, 20),
+    auth: observedInt(raw.auth, 0, 255),
   };
 }
 
@@ -53,7 +56,7 @@ export function normalizeBleObservation(raw = {}) {
     name: typeof raw.name === 'string' ? raw.name : null,
     address: normalizeMac(raw.address),
     addressType,
-    rssi: intOrNull(raw.rssi, -127, 20),
+    rssi: observedInt(raw.rssi, -127, 20),
     connectable: boolOrNull(raw.connectable),
     manufacturerId: intOrNull(manufacturer, 0, 0xffff),
     services: services || null,
