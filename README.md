@@ -111,6 +111,23 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\start-pc-lab.ps1
 ```
 
+## Vulnerabilidades documentadas (NVD)
+
+La pestaña **Vulnerabilidades** consulta la [NVD CVE API 2.0 y la CPE API 2.0](https://nvd.nist.gov/developers) directamente desde el navegador. NVD responde con `Access-Control-Allow-Origin: *`; se comprobó con Edge desde `http://127.0.0.1` (respuestas 200 y 404 legibles), así que no hace falta backend ni proxy.
+
+> This product uses the NVD API but is not endorsed or certified by the NVD.
+
+- **Búsquedas:** identificador CVE (`cves/2.0?cveIds=`), palabras clave (`keywordSearch`, con `keywordExactMatch` y `noRejected` opcionales) y producto: primero el diccionario CPE (`cpes/2.0?keywordSearch=`) y, tras elegir la versión exacta, sus CVE (`cves/2.0?cpeName=…&isVulnerable`). Páginas de 20 resultados con `resultsPerPage` y `startIndex`.
+- **Resultados y detalle:** severidad y puntuación CVSS con su versión (4.0, 3.1, 3.0 o 2.0), fuente y tipo; estado (incluidas las rechazadas), fechas, debilidades, catálogo KEV, configuraciones con sus condiciones AND/OR, productos afectados según la CNA y referencias (sólo enlaces http/https). Una CVE sin métricas se muestra como «Sin puntuación CVSS», nunca como baja. La puntuación principal es la de la versión de CVSS más reciente; con la misma versión, la de NVD (Primary).
+- **Aplicabilidad:** con un producto elegido, Vigía compara su versión con los rangos de cada criterio y distingue si la CVE afecta, si sólo afecta junto con otra plataforma, si no se puede comprobar (versiones con letras o sin versión) o si no coincide. No confirma que un equipo concreto sea vulnerable.
+- **Separación de riesgos:** las CVE son vulnerabilidades documentadas, no hallazgos del sensor. La vista no lee el inventario ni el historial, no asocia CVE con SSID, BSSID, MAC, direcciones BLE, canal, RSSI ni autenticación, y rechaza búsquedas que contengan una MAC o un BSSID.
+- **Frecuencia:** el límite público es de 5 peticiones cada 30 s. `nvd-client.js` hace una petición a la vez con 6 s entre peticiones, agrupa las consultas idénticas simultáneas, cancela a los 30 s y reintenta una vez ante HTTP 429 (tras 30 s) o 503. Desde el navegador no se pueden leer las cabeceras `message` ni `Retry-After` porque NVD no las expone por CORS.
+- **Caché:** base IndexedDB propia (`vigia-nvd`, separada del historial) con hasta 60 respuestas y su fecha de consulta. Se reutilizan durante 24 h; **Actualizar desde NVD** fuerza una consulta nueva y, sin conexión, se muestran los datos guardados indicando su fecha. El service worker no intercepta peticiones a otros orígenes.
+- **Claves de API:** no se usan. Una clave incluida en la web sería pública, y los términos de NVD piden no compartirla con terceros. Si en el futuro se necesitara más frecuencia, la opción segura es que cada persona use su propia clave sólo en su navegador o un servicio propio autorizado; no se implementó.
+- **Privacidad:** cada consulta envía sólo el texto escrito o el producto elegido. NVD recibe la dirección IP como en cualquier visita web.
+
+Prueba rápida: abre **Vulnerabilidades**, busca `CVE-2021-44228`; después elige **Producto (CPE)**, busca `apache log4j 2.14.1` y pulsa **Ver CVE** en la entrada `log4j:2.14.1:-`.
+
 ## Aplicación Android
 
 El código móvil y su descarga se publican por separado:
@@ -130,7 +147,7 @@ Selecciona **ESP32 Dev Module**, **Partition Scheme: Huge APP (3MB No OTA/1MB SP
 
 ## Arquitectura
 
-- Web/PWA: HTML, CSS y JavaScript; Web Serial para usar el sensor; IndexedDB para el historial (`history-core.js`, `history-store.js`, `history.js`).
+- Web/PWA: HTML, CSS y JavaScript; Web Serial para usar el sensor; IndexedDB para el historial (`history-core.js`, `history-store.js`, `history.js`); consulta NVD separada en datos (`nvd-core.js`), red (`nvd-client.js`), caché (`nvd-store.js`) y vista (`nvd.js`).
 - Asistente local: PowerShell + Arduino CLI para detectar y preparar el ESP32.
 - Android: repositorio independiente enlazado arriba.
 - Firmware: Arduino-ESP32 con Wi-Fi y BLE.
