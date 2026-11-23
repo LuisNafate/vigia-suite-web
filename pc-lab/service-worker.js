@@ -1,5 +1,5 @@
-const CACHE = 'vigia-suite-v12';
-const ASSETS = ['/', '/index.html', '/landing.css', '/landing.js', '/sequence-config.js', '/dashboard.html', '/styles.css', '/app.js', '/installer.js', '/firmware-core.js', '/vendor/esptool-js-0.7.0/bundle.js', '/manifest.webmanifest', '/icon.svg', '/assets/monochrome-folds.png', '/product-sequence/desktop/frame-0001.webp', '/product-sequence/mobile/frame-0001.webp'];
+const CACHE = 'vigia-suite-v13';
+const ASSETS = ['/', '/index.html', '/landing.css', '/landing.js', '/sequence-config.js', '/dashboard.html', '/styles.css', '/app.js', '/installer.js', '/firmware-core.js', '/history.js', '/history-core.js', '/history-store.js', '/vendor/esptool-js-0.7.0/bundle.js', '/manifest.webmanifest', '/icon.svg', '/assets/monochrome-folds.png', '/product-sequence/desktop/frame-0001.webp', '/product-sequence/mobile/frame-0001.webp'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
 self.addEventListener('activate', event => event.waitUntil(
   caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))

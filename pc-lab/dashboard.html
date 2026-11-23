@@ -24,6 +24,7 @@
       <button class="tab" data-view-target="analisis"><strong>Resumen</strong><small>Riesgos y acciones</small></button>
       <button class="tab" data-view-target="wifi"><strong>Wi-Fi Recon <span id="wifiBadge">0</span></strong><small>Inventario y defensa</small></button>
       <button class="tab" data-view-target="bluetooth"><strong>Bluetooth <span id="bleBadge">0</span></strong><small>Privacidad y cercanía</small></button>
+      <button class="tab" data-view-target="historial"><strong>Historial</strong><small>Evaluaciones y comparación</small></button>
       <button class="tab" data-view-target="diagnostico"><strong>Sistema</strong><small>Sensor y firmware</small></button>
       <button class="tab" data-view-target="instalar"><strong>Preparar ESP32</strong><small>Instalar o actualizar firmware</small></button>
       <div class="side-note"><span>VIGIA/2</span><strong>Procesamiento local</strong><small>Los datos permanecen en este dispositivo.</small></div>
@@ -88,7 +89,7 @@
       </div>
       <article class="panel history-panel">
         <div class="panel-heading"><div><p class="overline">INFORMES Y REGISTRO</p><h2>Guarda o compara resultados</h2></div><div class="button-row"><button class="secondary" id="exportJsonButton" disabled>Informe JSON</button><button class="secondary" id="exportCsvButton" disabled>Inventario CSV</button><span class="counter" id="historyCounter">0 sesiones</span><button class="ghost" id="clearHistoryButton" disabled>Limpiar</button></div></div>
-        <p class="history-help">Se conserva únicamente en este navegador y registra resúmenes, no tráfico ni contraseñas.</p>
+        <p class="history-help">Se conserva únicamente en este navegador: el resumen y las redes y dispositivos observados en cada evaluación. No registra tráfico ni contraseñas. <button class="link-button" data-view-target="historial">Abrir el historial completo</button></p>
         <div id="historyList" class="history-list"><p class="empty-copy">Aún no hay análisis guardados.</p></div>
       </article>
       <p class="analysis-note">El resultado describe exposición observable; no demuestra por sí mismo una vulnerabilidad explotable. Valida los hallazgos con el responsable de cada red.</p>
@@ -142,6 +143,37 @@
       </article>
       <article class="panel module-analysis"><p class="overline">ANÁLISIS BLUETOOTH</p><h2>Privacidad y superficie observable</h2><div id="bleAdvice" class="finding-list"><p class="empty-copy">Escanea para recibir recomendaciones contextualizadas.</p></div></article>
       <p class="analysis-note">El inventario solo lee anuncios BLE públicos. No se conecta, empareja ni extrae información privada de los dispositivos.</p>
+    </section>
+
+    <section class="view" data-view="historial" aria-labelledby="historyTitle">
+      <div class="section-heading"><div><p class="eyebrow">REGISTRO LOCAL · ESTE NAVEGADOR</p><h2 id="historyTitle">Historial de evaluaciones</h2><p class="section-description">Abre una evaluación para revisar todas sus observaciones o marca dos para ver qué cambió entre ellas.</p></div></div>
+      <p class="analysis-note" id="historyStatus" role="status">Abriendo historial…</p>
+      <div class="workspace-grid history-workspace">
+        <article class="panel">
+          <div class="panel-heading"><div><p class="overline">EVALUACIONES</p><h2>Registro</h2></div><span class="counter" id="historyViewCounter">0 evaluaciones</span></div>
+          <p class="history-help">Marca dos evaluaciones para compararlas. La más antigua se usa como referencia.</p>
+          <div class="button-row"><button class="primary" id="historyCompareButton" disabled>Comparar seleccionadas</button></div>
+          <div id="historyViewList" class="history-list history-full-list"><p class="empty-copy">Cargando…</p></div>
+        </article>
+        <article class="panel">
+          <p class="overline">PRIVACIDAD Y CONSERVACIÓN</p><h2>Qué se guarda</h2>
+          <ul class="history-privacy">
+            <li>Fecha, puntuación, nivel y estado de cada evaluación.</li>
+            <li>Identidad del sensor: placa, chip, MAC, firmware y protocolo, si el sensor los informó.</li>
+            <li>Por red Wi-Fi: SSID, BSSID, canal, RSSI y autenticación anunciada.</li>
+            <li>Por dispositivo BLE: nombre, dirección, tipo de dirección, RSSI, conectividad, fabricante y servicios anunciados.</li>
+            <li>No se guardan contraseñas, tráfico ni la consola serial, y nada se envía a servidores externos.</li>
+          </ul>
+          <label class="fw-select-label" for="historyMaxCount">Conservar como máximo</label>
+          <select id="historyMaxCount"></select>
+          <label class="fw-select-label" for="historyMaxAge">Eliminar evaluaciones con más de</label>
+          <select id="historyMaxAge"></select>
+          <div class="button-row history-actions"><button class="secondary" id="historyRetentionApply">Aplicar política</button><button class="ghost" id="historyDeleteAll" disabled>Eliminar todo el historial</button></div>
+          <output id="historyRetentionResult"></output>
+        </article>
+      </div>
+      <article class="panel history-detail" id="historyDetail" hidden></article>
+      <article class="panel history-detail" id="historyComparison" hidden></article>
     </section>
 
     <section class="view" data-view="diagnostico">
@@ -255,5 +287,6 @@
   </main>
   <script src="app.js"></script>
   <script type="module" src="installer.js"></script>
+  <script type="module" src="history.js"></script>
 </body>
 </html>

@@ -619,3 +619,40 @@ button:focus-visible { outline-color: #111; }
 @media (max-width: 560px) {
   .fw-facts, .fw-steps { grid-template-columns: 1fr; }
 }
+
+/* Historial completo (IndexedDB) */
+.history-workspace > .panel { display: flex; flex-direction: column; gap: 12px; padding: 22px; }
+.history-workspace h2, .history-detail h2 { margin: 4px 0 0; }
+.history-full-list { max-height: 620px; overflow: auto; }
+.history-row { grid-template-columns: minmax(150px,.7fr) 1.5fr auto; }
+.history-row.selected { border-color: #202020; background: rgba(255,255,255,.9); }
+.history-pick { display: flex; align-items: center; gap: 9px; cursor: pointer; }
+.history-pick input { width: 17px; height: 17px; accent-color: #202020; }
+.history-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.history-tag { padding: 3px 8px; border-radius: 999px; color: #fff; background: #444; font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+.history-tag.complete { background: #2c5d34; }
+.history-tag.partial { background: #6d6250; }
+.history-tag.legacy { background: #6f6f6f; }
+.history-privacy { display: grid; gap: 7px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.history-workspace select { width: 100%; padding: 10px 12px; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; background: #fff; font: inherit; }
+.history-workspace output { color: var(--muted); font-size: 12px; }
+.history-detail { margin-top: 16px; padding: 22px; }
+.history-detail h3 { margin: 22px 0 0; font-size: 16px; }
+.history-detail h4 { margin: 14px 0 0; font-size: 13px; }
+.history-detail .table-wrap { margin-top: 10px; }
+.history-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.history-facts { display: grid; gap: 8px; margin: 0; }
+.history-facts div { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.history-facts dt { color: var(--muted); font-size: 12px; }
+.history-facts dd { margin: 0; text-align: right; overflow-wrap: anywhere; font: 12px "Cascadia Code", Consolas, monospace; }
+.history-compare-metrics { grid-template-columns: repeat(4, 1fr); margin: 16px 0; padding: 0; background: none; }
+.history-compare-metrics .metric { min-height: 90px; }
+.history-compare-metrics .metric strong { font-size: 26px; }
+.history-compare-metrics .metric small { color: var(--muted); font-size: 11px; }
+.history-compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 6px; }
+.history-compare-grid .empty-copy { font-size: 12px; }
+@media (max-width: 900px) {
+  .history-detail-grid, .history-compare-grid { grid-template-columns: 1fr; }
+  .history-compare-metrics { grid-template-columns: repeat(2, 1fr); }
+  .history-row { grid-template-columns: 1fr; }
+}
