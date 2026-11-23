@@ -8,9 +8,9 @@ const read = file => readFile(new URL(`../${file}`, import.meta.url), 'utf8');
 const idsIn = html => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]));
 const selectorsIn = source => [...source.matchAll(/\$\('#([A-Za-z0-9_-]+)'\)/g)].map(match => match[1]);
 
-test('dashboard.html contiene todos los elementos que usan app.js e installer.js', async () => {
+test('dashboard.html contiene todos los elementos que usan app.js, installer.js e history.js', async () => {
   const ids = idsIn(await read('pc-lab/dashboard.html'));
-  for (const file of ['pc-lab/app.js', 'pc-lab/installer.js']) {
+  for (const file of ['pc-lab/app.js', 'pc-lab/installer.js', 'pc-lab/history.js']) {
     const missing = selectorsIn(await read(file)).filter(id => !ids.has(id));
     assert.deepEqual(missing, [], `${file} referencia ids inexistentes`);
   }
@@ -87,4 +87,33 @@ test('macLabel muestra la MAC real tanto del firmware nuevo como del antiguo', a
   // Valores vacios o inesperados se dejan pasar sin inventar nada.
   assert.equal(macLabel(undefined), '');
   assert.equal(macLabel('no-aplica'), 'no-aplica');
+});
+
+test('history.js se carga como módulo después de app.js y el service worker lo incluye', async () => {
+  const html = await read('pc-lab/dashboard.html');
+  assert.match(html, /<script type="module" src="history.js"><\/script>/);
+  assert.ok(html.indexOf('src="app.js"') < html.indexOf('src="history.js"'));
+  assert.match(html, /data-view="historial"/);
+  assert.match(html, /data-view-target="historial"/);
+  const sw = await read('pc-lab/service-worker.js');
+  for (const file of ['/history.js', '/history-core.js', '/history-store.js']) assert.ok(sw.includes(`'${file}'`), `${file} falta en el service worker`);
+  const app = await read('pc-lab/app.js');
+  assert.match(app, /labels: Object\.freeze\(\{ authLabel, addressTypeLabel, manufacturerLabel \}\)/);
+});
+
+test('el historial no envía datos fuera del navegador', async () => {
+  for (const file of ['pc-lab/history.js', 'pc-lab/history-core.js', 'pc-lab/history-store.js']) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /fetch\(|XMLHttpRequest|sendBeacon|WebSocket|nvd\.nist/i, `${file} no debe hacer peticiones de red`);
+  }
+});
+
+test('la puntuación de app.js no cambió con el historial', async () => {
+  const app = await read('pc-lab/app.js');
+  const source = app.match(/let score = 0;[\s\S]*?score = Math\.min\(100, score\);/)[0];
+  const compute = new Function('open', 'strongOpen', 'weak', 'total', 'busiest', 'stableNearbyBle', `${source}; return score;`);
+  const many = n => Array.from({ length: n }, () => ({ connectable: true }));
+  assert.equal(compute(many(2), many(1), many(1), 8, ['6', 3], many(0)), 2 * 3 + 5 + 12 + 10);
+  assert.equal(compute(many(20), many(10), many(5), 30, ['6', 12], many(9)), 100);
+  assert.equal(compute([], [], [], 4, ['1', 13], many(3)), 5 + 6);
 });
