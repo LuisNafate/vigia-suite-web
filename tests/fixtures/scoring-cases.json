@@ -958,6 +958,639 @@
         "score": 18,
         "level": "BAJO"
       }
+    },
+    {
+      "name": "12 redes sin canal no suman congestión",
+      "why": "Ninguna red informa canal: no existe un canal que concentre 12 redes.",
+      "wifi": [
+        {
+          "ssid": "Sin1",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:01"
+        },
+        {
+          "ssid": "Sin2",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:02"
+        },
+        {
+          "ssid": "Sin3",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:03"
+        },
+        {
+          "ssid": "Sin4",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:04"
+        },
+        {
+          "ssid": "Sin5",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:05"
+        },
+        {
+          "ssid": "Sin6",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:06"
+        },
+        {
+          "ssid": "Sin7",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:07"
+        },
+        {
+          "ssid": "Sin8",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:08"
+        },
+        {
+          "ssid": "Sin9",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:09"
+        },
+        {
+          "ssid": "Sin10",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:0A"
+        },
+        {
+          "ssid": "Sin11",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:0B"
+        },
+        {
+          "ssid": "Sin12",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:0C"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "14 redes con canal nulo, en texto, decimal o fuera de rango",
+      "why": "Un canal inválido queda desconocido; los desconocidos no se agrupan aunque sean 14.",
+      "wifi": [
+        {
+          "ssid": "Sin13",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:0D"
+        },
+        {
+          "ssid": "Sin14",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:0E"
+        },
+        {
+          "ssid": "Sin15",
+          "rssi": -60,
+          "channel": 197,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:0F"
+        },
+        {
+          "ssid": "Sin16",
+          "rssi": -60,
+          "channel": -1,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:10"
+        },
+        {
+          "ssid": "Sin17",
+          "rssi": -60,
+          "channel": "6",
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:11"
+        },
+        {
+          "ssid": "Sin18",
+          "rssi": -60,
+          "channel": "6",
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:12"
+        },
+        {
+          "ssid": "Sin19",
+          "rssi": -60,
+          "channel": 6.5,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:13"
+        },
+        {
+          "ssid": "Sin20",
+          "rssi": -60,
+          "channel": true,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:14"
+        },
+        {
+          "ssid": "Sin21",
+          "rssi": -60,
+          "channel": false,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:15"
+        },
+        {
+          "ssid": "Sin22",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:16"
+        },
+        {
+          "ssid": "Sin23",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:17"
+        },
+        {
+          "ssid": "Sin24",
+          "rssi": -60,
+          "channel": "11",
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:18"
+        },
+        {
+          "ssid": "Sin25",
+          "rssi": -60,
+          "channel": "1",
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:19"
+        },
+        {
+          "ssid": "Sin26",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:1A"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "11 redes en el canal 6 y 12 sin canal",
+      "why": "El canal 6 sólo tiene 11 redes válidas: las 12 sin canal no completan el umbral.",
+      "wifi": [
+        {
+          "ssid": "Sin27",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:1B"
+        },
+        {
+          "ssid": "Sin28",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:1C"
+        },
+        {
+          "ssid": "Sin29",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:1D"
+        },
+        {
+          "ssid": "Sin30",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:1E"
+        },
+        {
+          "ssid": "Sin31",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:1F"
+        },
+        {
+          "ssid": "Sin32",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:20"
+        },
+        {
+          "ssid": "Sin33",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:21"
+        },
+        {
+          "ssid": "Sin34",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:22"
+        },
+        {
+          "ssid": "Sin35",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:23"
+        },
+        {
+          "ssid": "Sin36",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:24"
+        },
+        {
+          "ssid": "Sin37",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:25"
+        },
+        {
+          "ssid": "Sin38",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:26"
+        },
+        {
+          "ssid": "Sin39",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:27"
+        },
+        {
+          "ssid": "Sin40",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:28"
+        },
+        {
+          "ssid": "Sin41",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:29"
+        },
+        {
+          "ssid": "Sin42",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:2A"
+        },
+        {
+          "ssid": "Sin43",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:2B"
+        },
+        {
+          "ssid": "Sin44",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:2C"
+        },
+        {
+          "ssid": "Sin45",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:2D"
+        },
+        {
+          "ssid": "Sin46",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:2E"
+        },
+        {
+          "ssid": "Sin47",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:2F"
+        },
+        {
+          "ssid": "Sin48",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:30"
+        },
+        {
+          "ssid": "Sin49",
+          "rssi": -60,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:31"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "12 redes en el canal 6 y 12 sin canal",
+      "why": "El canal 6 tiene 12 redes válidas y suma 5; las redes sin canal no cambian el resultado.",
+      "wifi": [
+        {
+          "ssid": "Sin50",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:32"
+        },
+        {
+          "ssid": "Sin51",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:33"
+        },
+        {
+          "ssid": "Sin52",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:34"
+        },
+        {
+          "ssid": "Sin53",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:35"
+        },
+        {
+          "ssid": "Sin54",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:36"
+        },
+        {
+          "ssid": "Sin55",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:37"
+        },
+        {
+          "ssid": "Sin56",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:38"
+        },
+        {
+          "ssid": "Sin57",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:39"
+        },
+        {
+          "ssid": "Sin58",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:3A"
+        },
+        {
+          "ssid": "Sin59",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:3B"
+        },
+        {
+          "ssid": "Sin60",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:3C"
+        },
+        {
+          "ssid": "Sin61",
+          "rssi": -60,
+          "channel": 6,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:3D"
+        },
+        {
+          "ssid": "Sin62",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:3E"
+        },
+        {
+          "ssid": "Sin63",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:3F"
+        },
+        {
+          "ssid": "Sin64",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:40"
+        },
+        {
+          "ssid": "Sin65",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:41"
+        },
+        {
+          "ssid": "Sin66",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:42"
+        },
+        {
+          "ssid": "Sin67",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:43"
+        },
+        {
+          "ssid": "Sin68",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:44"
+        },
+        {
+          "ssid": "Sin69",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:45"
+        },
+        {
+          "ssid": "Sin70",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:46"
+        },
+        {
+          "ssid": "Sin71",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:47"
+        },
+        {
+          "ssid": "Sin72",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:48"
+        },
+        {
+          "ssid": "Sin73",
+          "rssi": -60,
+          "channel": null,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:49"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 5,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "canales inválidos con redes abiertas",
+      "why": "3 abiertas cercanas (9 + 15) + 23 % abiertas (no suma); 13 redes sin canal válido no suman congestión.",
+      "wifi": [
+        {
+          "ssid": "Sin74",
+          "rssi": -50,
+          "channel": "1",
+          "auth": 0,
+          "bssid": "BB:BB:BB:BB:00:4A"
+        },
+        {
+          "ssid": "Sin75",
+          "rssi": -50,
+          "channel": "1",
+          "auth": 0,
+          "bssid": "BB:BB:BB:BB:00:4B"
+        },
+        {
+          "ssid": "Sin76",
+          "rssi": -50,
+          "channel": "1",
+          "auth": 0,
+          "bssid": "BB:BB:BB:BB:00:4C"
+        },
+        {
+          "ssid": "Sin77",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:4D"
+        },
+        {
+          "ssid": "Sin78",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:4E"
+        },
+        {
+          "ssid": "Sin79",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:4F"
+        },
+        {
+          "ssid": "Sin80",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:50"
+        },
+        {
+          "ssid": "Sin81",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:51"
+        },
+        {
+          "ssid": "Sin82",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:52"
+        },
+        {
+          "ssid": "Sin83",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:53"
+        },
+        {
+          "ssid": "Sin84",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:54"
+        },
+        {
+          "ssid": "Sin85",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:55"
+        },
+        {
+          "ssid": "Sin86",
+          "rssi": -60,
+          "channel": 0,
+          "auth": 3,
+          "bssid": "BB:BB:BB:BB:00:56"
+        }
+      ],
+      "ble": [],
+      "expected": {
+        "score": 24,
+        "level": "BAJO"
+      }
     }
   ]
 }

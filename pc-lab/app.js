@@ -491,7 +491,8 @@ function renderAnalysis() {
   const weak = networks.filter(network => network.auth === 1 || network.auth === 2);
   const hidden = networks.filter(network => !network.ssid);
   const strongOpen = open.filter(network => network.rssi >= -70);
-  const channels = networks.reduce((counts, network) => ({ ...counts, [network.channel]: (counts[network.channel] || 0) + 1 }), {});
+  // Igual que Android: una red sin canal válido no forma parte de ningún canal (antes se agrupaban bajo «undefined»).
+  const channels = networks.filter(network => Number.isInteger(network.channel)).reduce((counts, network) => ({ ...counts, [network.channel]: (counts[network.channel] || 0) + 1 }), {});
   const busiest = Object.entries(channels).sort((a, b) => b[1] - a[1])[0];
   const nearbyBle = bleDevices.filter(device => device.rssi >= -65);
   const connectableBle = bleDevices.filter(device => device.connectable);
