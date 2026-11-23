@@ -24,7 +24,7 @@
 
 Suite defensiva web conectada a un sensor NodeMCU ESP-32S mediante USB. Este repositorio contiene la presentación, el laboratorio web, el firmware y las herramientas para preparar el sensor.
 
-El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hallazgos explicados y recomendaciones. La web conserva hasta 20 resúmenes en el navegador y exporta el informe completo como JSON o CSV.
+El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hallazgos explicados y recomendaciones. Cada evaluación se guarda completa en el historial local del navegador (IndexedDB), con todas sus redes y dispositivos observados; si IndexedDB no está disponible, se conservan hasta 20 resúmenes en `localStorage`, como en la versión anterior. El informe completo se exporta como JSON o CSV.
 
 ## Enlaces rápidos
 
@@ -60,7 +60,10 @@ El ESP-32S no tiene USB nativo. La comunicación pasa por el convertidor USB-UAR
 - Reinicio controlado con `REBOOT`.
 - Límite de 32 resultados por análisis para proteger la memoria del sensor.
 - Uso local: los resultados no se envían a Internet.
-- Navegación por apartados: Inicio, Resumen, Redes Wi-Fi, Bluetooth y Sistema.
+- Navegación por apartados: Inicio, Resumen, Redes Wi-Fi, Bluetooth, Historial y Sistema.
+- Canales: la puntuación suma 5 puntos sólo cuando un canal válido concentra 12 o más redes, y únicamente entonces aparece el hallazgo de congestión. Desde 4 redes en un canal se muestra un consejo de optimización informativo, que no es un riesgo. Las redes sin canal válido no cuentan en ningún canal.
+- Fórmula versión 3: en Bluetooth sólo suma como identificador estable una dirección pública o una aleatoria estática (dos bits altos del primer byte en 11), siempre que el dispositivo esté cercano y sea conectable. Las direcciones privadas resolubles y no resolubles, las identidades resueltas (tipos 2 y 3) y los tipos o direcciones no determinados no suman. Cada evaluación nueva guarda su versión de fórmula; las anteriores se conservan con su puntuación original y versión «no registrada», y al compararlas se advierte de la diferencia BLE, como comprobada sólo cuando la versión y las observaciones guardadas lo permiten. Las redes WPA-Enterprise heredado (modo 16) reciben un aviso informativo sin puntos.
+- Historial local en IndexedDB: cada evaluación conserva sus redes Wi-Fi y dispositivos BLE; permite abrir el detalle, comparar dos evaluaciones (redes nuevas, desaparecidas, cambios de canal, de autenticación y de nombre por BSSID), eliminar una o todas y definir una política de conservación. Los resúmenes anteriores de `localStorage` se migran como evaluaciones históricas. Un cambio de autenticación del mismo BSSID se califica como más débil, sin pérdida de protección o sin calificar según la familia del modo (abierta, WEP, WPA/WPA2/WPA3 personal, Enterprise, OWE, WAPI, DPP; modos 0-16 del núcleo 3.3.12): sólo se declara un debilitamiento con evidencia técnica, nunca por el número del modo.
 - Interfaz 0.8 monocromática con navegación lateral en escritorio, navegación compacta en móvil y acciones ordenadas por tarea.
 - Cada herramienta incluye un apartado desplegable con su propósito, datos entregados, límites y orden recomendado de uso.
 - Análisis guiado que ejecuta los módulos de forma secuencial y evita escaneos solapados.
@@ -95,7 +98,7 @@ El firmware oficial se publica en `pc-lab/firmware/` con su `manifest.json`. Par
 5. Si la placa todavía no tiene Vigía, usa **Preparar ESP32**. El helper local de **Sistema → Helper local (desarrollo)** sigue disponible solo para desarrolladores.
 6. Pulsa **Conectar sensor**, autoriza el puerto y ejecuta los módulos de enlace, identidad, diagnóstico, Wi-Fi y Bluetooth.
 
-Pruebas sin hardware: `npm test` (Node 20 o posterior, sin dependencias).
+Pruebas sin hardware: `npm test` (Node 20 o posterior, sin dependencias). Las pruebas del historial en IndexedDB abren Edge o Chrome sin interfaz (o el navegador indicado en `VIGIA_TEST_BROWSER`) y requieren Node 22 o posterior; si falta alguno de los dos, se omiten.
 
 La portada usa 192 cuadros WebP del MP4 original: 1280×720 para escritorio y 768×432 para móvil. El desplazamiento controla el cuadro mostrado y funciona en ambos sentidos. Para regenerar las secuencias usa `scripts/extract-product-frames.ps1`.
 
@@ -107,6 +110,23 @@ Inicio manual:
 Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\start-pc-lab.ps1
 ```
+
+## Vulnerabilidades documentadas (NVD)
+
+La pestaña **Vulnerabilidades** consulta la [NVD CVE API 2.0 y la CPE API 2.0](https://nvd.nist.gov/developers) directamente desde el navegador. NVD responde con `Access-Control-Allow-Origin: *`; se comprobó con Edge desde `http://127.0.0.1` (respuestas 200 y 404 legibles), así que no hace falta backend ni proxy.
+
+> This product uses the NVD API but is not endorsed or certified by the NVD.
+
+- **Búsquedas:** identificador CVE (`cves/2.0?cveIds=`), palabras clave (`keywordSearch`, con `keywordExactMatch` y `noRejected` opcionales) y producto: primero el diccionario CPE (`cpes/2.0?keywordSearch=`) y, tras elegir la versión exacta, sus CVE (`cves/2.0?cpeName=…&isVulnerable`). Páginas de 20 resultados con `resultsPerPage` y `startIndex`.
+- **Resultados y detalle:** severidad y puntuación CVSS con su versión (4.0, 3.1, 3.0 o 2.0), fuente y tipo; estado (incluidas las rechazadas), fechas, debilidades, catálogo KEV, configuraciones con sus condiciones AND/OR, productos afectados según la CNA y referencias (sólo enlaces http/https). Una CVE sin métricas se muestra como «Sin puntuación CVSS», nunca como baja. La puntuación principal es la de la versión de CVSS más reciente; con la misma versión, la de NVD (Primary).
+- **Aplicabilidad:** con un producto elegido, Vigía compara su versión con los rangos de cada criterio y distingue si la CVE afecta, si sólo afecta junto con otra plataforma, si no se puede comprobar (versiones con letras o sin versión) o si no coincide. No confirma que un equipo concreto sea vulnerable.
+- **Separación de riesgos:** las CVE son vulnerabilidades documentadas, no hallazgos del sensor. La vista no lee el inventario ni el historial, no asocia CVE con SSID, BSSID, MAC, direcciones BLE, canal, RSSI ni autenticación, y rechaza búsquedas que contengan una MAC o un BSSID.
+- **Frecuencia:** el límite público es de 5 peticiones cada 30 s. `nvd-client.js` hace una petición a la vez con 6 s entre peticiones, agrupa las consultas idénticas simultáneas, cancela a los 30 s y reintenta una vez ante HTTP 429 (tras 30 s) o 503. Desde el navegador no se pueden leer las cabeceras `message` ni `Retry-After` porque NVD no las expone por CORS.
+- **Caché:** base IndexedDB propia (`vigia-nvd`, separada del historial) con hasta 60 respuestas y su fecha de consulta. Se reutilizan durante 24 h; **Actualizar desde NVD** fuerza una consulta nueva y, sin conexión, se muestran los datos guardados indicando su fecha. El service worker no intercepta peticiones a otros orígenes.
+- **Claves de API:** no se usan. Una clave incluida en la web sería pública, y los términos de NVD piden no compartirla con terceros. Si en el futuro se necesitara más frecuencia, la opción segura es que cada persona use su propia clave sólo en su navegador o un servicio propio autorizado; no se implementó.
+- **Privacidad:** cada consulta envía sólo el texto escrito o el producto elegido. NVD recibe la dirección IP como en cualquier visita web.
+
+Prueba rápida: abre **Vulnerabilidades**, busca `CVE-2021-44228`; después elige **Producto (CPE)**, busca `apache log4j 2.14.1` y pulsa **Ver CVE** en la entrada `log4j:2.14.1:-`.
 
 ## Aplicación Android
 
@@ -127,7 +147,7 @@ Selecciona **ESP32 Dev Module**, **Partition Scheme: Huge APP (3MB No OTA/1MB SP
 
 ## Arquitectura
 
-- Web/PWA: HTML, CSS y JavaScript; Web Serial para usar el sensor.
+- Web/PWA: HTML, CSS y JavaScript; Web Serial para usar el sensor; IndexedDB para el historial (`history-core.js`, `history-store.js`, `history.js`); consulta NVD separada en datos (`nvd-core.js`), red (`nvd-client.js`), caché (`nvd-store.js`) y vista (`nvd.js`).
 - Asistente local: PowerShell + Arduino CLI para detectar y preparar el ESP32.
 - Android: repositorio independiente enlazado arriba.
 - Firmware: Arduino-ESP32 con Wi-Fi y BLE.

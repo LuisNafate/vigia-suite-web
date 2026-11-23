@@ -50,6 +50,11 @@ let currentReport = null;
 let scanHistory = [];
 let wifiFilter = 'all';
 let bleFilter = 'all';
+// Metadatos que el historial necesita y que el protocolo ya entrega (ready, protocol, truncated).
+let sensorFirmware = null;
+let sensorProtocol = null;
+let wifiTruncated = null;
+let bleTruncated = null;
 const eventWaiters = new Map();
 const HISTORY_KEY = 'vigia-suite-analysis-history-v1';
 const WIFI_BASELINE_KEY = 'vigia-suite-wifi-baseline-v1';
@@ -103,8 +108,13 @@ function updateJourney(connected = Boolean(writer)) {
   }
 }
 
+// wifi_auth_mode_t del núcleo esp32 3.3.12 (firmware/build-config.json). Sólo un número entero es un modo: un campo
+// ausente o inválido se muestra como «No informada» y nunca como red abierta (igual que en Android).
+const AUTH_LABELS = ['Abierta', 'WEP', 'WPA-PSK', 'WPA2-PSK', 'WPA/WPA2', 'WPA2 Enterprise', 'WPA3-PSK', 'WPA2/WPA3', 'WAPI',
+  'OWE', 'WPA3 Enterprise 192 bits', 'WPA3-PSK (EXT)', 'WPA3-PSK mixto (EXT)', 'DPP', 'WPA3 Enterprise', 'WPA2/WPA3 Enterprise', 'WPA Enterprise'];
 function authLabel(value) {
-  return ({ 0: 'Abierta', 1: 'WEP', 2: 'WPA-PSK', 3: 'WPA2-PSK', 4: 'WPA/WPA2', 5: 'WPA2 Enterprise', 6: 'WPA3-PSK', 7: 'WPA2/WPA3', 8: 'WAPI' })[value] ?? `Modo ${value}`;
+  if (!Number.isInteger(value) || value < 0 || value > 255) return 'No informada';
+  return AUTH_LABELS[value] ?? `Modo ${value} no reconocido`;
 }
 
 // El firmware 0.5.0 publica la MAC de fabrica en notacion estandar. Las versiones
@@ -117,10 +127,25 @@ function macLabel(value) {
   return text.toUpperCase().match(/../g).reverse().join(':');
 }
 function signalClass(rssi) { return rssi >= -60 ? 'signal-good' : rssi >= -75 ? 'signal-mid' : 'signal-low'; }
-function proximityLabel(rssi) { return rssi >= -55 ? 'Muy cerca' : rssi >= -65 ? 'Cerca' : rssi >= -80 ? 'Media' : 'Lejana'; }
-function addressTypeLabel(type) {
-  return ({ public: 'Pública', random: 'Aleatoria', public_identity: 'Identidad pública', random_identity: 'Identidad aleatoria' })[type] || 'No informada';
+function proximityLabel(rssi) { return rssi === undefined ? 'Desconocida' : rssi >= -55 ? 'Muy cerca' : rssi >= -65 ? 'Cerca' : rssi >= -80 ? 'Media' : 'Lejana'; }
+function dbmLabel(rssi) { return rssi === undefined ? 'RSSI no informado' : `${rssi} dBm`; }
+const byRssi = (a, b) => (b.rssi ?? -999) - (a.rssi ?? -999);
+// Mismos rangos que el parser de Android y que el historial. Un campo ausente o inválido se elimina del evento: en
+// JavaScript null o "-40" se comparan como números (null >= -70 es verdadero) y producirían alertas falsas.
+const WIFI_FIELDS = [['rssi', -127, 20], ['channel', 1, 196], ['auth', 0, 255]];
+const BLE_FIELDS = [['rssi', -127, 20]];
+function withValidFields(event, fields) {
+  const copy = { ...event };
+  for (const [name, min, max] of fields) if (!(Number.isInteger(copy[name]) && copy[name] >= min && copy[name] <= max)) delete copy[name];
+  return copy;
 }
+// Versión de la fórmula de puntuación que se guarda con cada evaluación. 3: clasificación BLE por subtipo de dirección
+// (ble-address.js). Las evaluaciones anteriores no guardan versión y se muestran como «no registrada».
+const SCORE_FORMULA_VERSION = 3;
+const bleAddress = () => globalThis.VigiaBleAddress;
+const bleClass = device => bleAddress().classify(device.address_type, device.address);
+/** Etiqueta de privacidad de una dirección BLE a partir del tipo y de la dirección. */
+function addressTypeLabel(type, address) { return bleAddress().label(bleAddress().classify(type, address)); }
 function manufacturerLabel(id) {
   return ({ 6: 'Microsoft', 76: 'Apple', 117: 'Samsung', 224: 'Google' })[id] || (id >= 0 ? `ID 0x${id.toString(16).toUpperCase().padStart(4, '0')}` : 'Sin fabricante');
 }
@@ -130,10 +155,12 @@ function escapeHtml(value) {
 
 function renderNetworks() {
   const openCount = networks.filter(network => network.auth === 0).length;
-  const visible = networks.filter(network => wifiFilter === 'all' || (wifiFilter === 'open' && network.auth === 0) || (wifiFilter === 'protected' && network.auth !== 0) || (wifiFilter === 'nearby' && network.rssi >= -65));
+  const visible = networks.filter(network => wifiFilter === 'all' || (wifiFilter === 'open' && network.auth === 0) || (wifiFilter === 'protected' && Number.isInteger(network.auth) && network.auth !== 0) || (wifiFilter === 'nearby' && network.rssi >= -65));
   elements.counter.textContent = `${visible.length} de ${networks.length} redes`;
   elements.wifiBadge.textContent = networks.length;
-  elements.wifiSummary.textContent = networks.length ? `${openCount} abiertas · ${networks.length - openCount} protegidas` : 'Sin resultados.';
+  const protectedCount = networks.filter(network => Number.isInteger(network.auth) && network.auth !== 0).length;
+  const unknownCount = networks.length - openCount - protectedCount;
+  elements.wifiSummary.textContent = networks.length ? `${openCount} abiertas · ${protectedCount} protegidas${unknownCount ? ` · ${unknownCount} sin autenticación informada` : ''}` : 'Sin resultados.';
   if (elements.hiddenResult) {
     const hidden = networks.filter(network => !network.ssid).length;
     elements.hiddenResult.textContent = networks.length ? `${hidden} AP sin nombre anunciado en la muestra actual.` : 'Ejecuta primero Wi-Fi Scan.';
@@ -147,9 +174,9 @@ function renderNetworks() {
     elements.table.innerHTML = '<tr class="empty-row"><td colspan="5">No hay redes que coincidan con este filtro.</td></tr>';
     renderModuleAdvice(); return;
   }
-  elements.table.innerHTML = [...visible].sort((a, b) => b.rssi - a.rssi).map(network => `<tr>
-    <td>${escapeHtml(network.ssid || '[oculta]')}</td><td class="${signalClass(network.rssi)}">${network.rssi} dBm</td>
-    <td>${network.channel}</td><td><span class="security-tag ${network.auth === 0 ? 'open' : ''}">${authLabel(network.auth)}</span></td>
+  elements.table.innerHTML = [...visible].sort(byRssi).map(network => `<tr>
+    <td>${escapeHtml(network.ssid || '[oculta]')}</td><td class="${signalClass(network.rssi)}">${dbmLabel(network.rssi)}</td>
+    <td>${network.channel ?? '—'}</td><td><span class="security-tag ${network.auth === 0 ? 'open' : ''}">${authLabel(network.auth)}</span></td>
     <td>${escapeHtml(network.bssid)}</td></tr>`).join('');
   renderModuleAdvice();
 }
@@ -157,13 +184,13 @@ function renderNetworks() {
 function renderBleDevices() {
   const nearby = bleDevices.filter(device => device.rssi >= -65).length;
   const connectable = bleDevices.filter(device => device.connectable).length;
-  const privateAddresses = bleDevices.filter(device => String(device.address_type).includes('random')).length;
-  const visible = bleDevices.filter(device => bleFilter === 'all' || (bleFilter === 'nearby' && device.rssi >= -65) || (bleFilter === 'connectable' && device.connectable) || (bleFilter === 'stable' && !String(device.address_type).includes('random')));
+  const privateAddresses = bleDevices.filter(device => bleAddress().isPrivate(bleClass(device))).length;
+  const visible = bleDevices.filter(device => bleFilter === 'all' || (bleFilter === 'nearby' && device.rssi >= -65) || (bleFilter === 'connectable' && device.connectable) || (bleFilter === 'stable' && bleAddress().isStable(bleClass(device))));
   elements.bleCounter.textContent = `${visible.length} de ${bleDevices.length} dispositivos`;
   elements.bleBadge.textContent = bleDevices.length;
   elements.bleVisible.textContent = bleDevices.length; elements.bleNearby.textContent = nearby;
   elements.bleConnectable.textContent = connectable; elements.blePrivate.textContent = privateAddresses;
-  elements.bleSummary.textContent = bleDevices.length ? `${nearby} cercanos · ${connectable} conectables · ${privateAddresses} con dirección aleatoria` : 'Sin resultados.';
+  elements.bleSummary.textContent = bleDevices.length ? `${nearby} cercanos · ${connectable} conectables · ${privateAddresses} con dirección privada` : 'Sin resultados.';
   if (elements.bleScannerResult) elements.bleScannerResult.textContent = bleDevices.length ? `${bleDevices.length} anuncios únicos; ${nearby} con señal cercana.` : 'Ejecuta BLE Scanner para comenzar.';
   if (!bleDevices.length) {
     elements.bleTable.innerHTML = '<tr class="empty-row"><td colspan="7">No hay dispositivos registrados.</td></tr>';
@@ -174,10 +201,10 @@ function renderBleDevices() {
     elements.bleTable.innerHTML = '<tr class="empty-row"><td colspan="7">No hay dispositivos que coincidan con este filtro.</td></tr>';
     renderModuleAdvice(); return;
   }
-  elements.bleTable.innerHTML = [...visible].sort((a, b) => b.rssi - a.rssi).map(device => `<tr>
-    <td>${escapeHtml(device.name || '[sin nombre]')}</td><td class="${signalClass(device.rssi)}">${device.rssi} dBm</td>
+  elements.bleTable.innerHTML = [...visible].sort(byRssi).map(device => `<tr>
+    <td>${escapeHtml(device.name || '[sin nombre]')}</td><td class="${signalClass(device.rssi)}">${dbmLabel(device.rssi)}</td>
     <td><span class="proximity-tag">${proximityLabel(device.rssi)}</span></td><td>${escapeHtml(device.address)}</td>
-    <td>${escapeHtml(addressTypeLabel(device.address_type))}</td><td>${device.connectable ? 'Sí' : 'No'}</td>
+    <td>${escapeHtml(addressTypeLabel(device.address_type, device.address))}</td><td>${device.connectable ? 'Sí' : 'No'}</td>
     <td><strong>${escapeHtml(manufacturerLabel(device.manufacturer_id))}</strong><small class="cell-detail">${escapeHtml(device.services || 'Sin servicios anunciados')}</small></td></tr>`).join('');
   renderModuleAdvice();
 }
@@ -186,7 +213,7 @@ function inspectHiddenAps() {
   if (!networks.length) { elements.hiddenResult.textContent = 'No hay muestra. Ejecuta Wi-Fi Scan.'; return; }
   const hidden = networks.filter(item => !item.ssid);
   if (!hidden.length) { elements.hiddenResult.textContent = 'No se observaron AP con SSID omitido en esta muestra.'; return; }
-  const channels = [...new Set(hidden.map(item => item.channel))].sort((a, b) => a - b);
+  const channels = [...new Set(hidden.map(item => item.channel ?? 'no informado'))].sort((a, b) => a - b);
   elements.hiddenResult.textContent = `${hidden.length} AP oculto(s), canales ${channels.join(', ')}. Ocultar el SSID no reemplaza WPA2/WPA3 y esta herramienta no intenta descubrir el nombre.`;
 }
 
@@ -240,23 +267,22 @@ function renderModuleAdvice() {
   if (networks.length) {
     const open = networks.filter(item => item.auth === 0);
     const legacy = networks.filter(item => item.auth === 1 || item.auth === 2);
-    const channelCounts = networks.reduce((result, item) => ({ ...result, [item.channel]: (result[item.channel] || 0) + 1 }), {});
-    const busiest = Object.entries(channelCounts).sort((a, b) => b[1] - a[1])[0];
+    const { advice: channelAdvice } = channelNotices(busiestChannel(networks));
     const wifiItems = [];
     if (legacy.length) wifiItems.push(addFinding('high', 'Cifrado heredado observable', `${legacy.length} red(es) anuncian WEP o WPA. En equipos propios, migra a WPA2-AES o WPA3.`));
     if (open.length) wifiItems.push(addFinding('medium', 'Redes abiertas cercanas', `${open.length} red(es) no anuncian cifrado. No envíes información sensible y valida aislamiento de clientes.`));
-    if (busiest && Number(busiest[1]) >= 4) wifiItems.push(addFinding('medium', `Canal ${busiest[0]} congestionado`, `${busiest[1]} redes comparten el canal. Mide en varios horarios antes de cambiar la configuración.`));
+    if (channelAdvice) wifiItems.push(noticeHtml(channelAdvice));
     if (!open.length && !legacy.length) wifiItems.push(addFinding('info', 'Configuración básica saludable', 'No se observó cifrado abierto o heredado. Aun así, revisa actualizaciones, contraseña y red de invitados.'));
     elements.wifiAdvice.innerHTML = wifiItems.join('');
   }
   if (bleDevices.length) {
     const nearby = bleDevices.filter(item => item.rssi >= -65);
-    const stable = nearby.filter(item => !String(item.address_type).includes('random'));
+    const stable = nearby.filter(item => bleAddress().isStable(bleClass(item)));
     const connectable = nearby.filter(item => item.connectable);
     const bleItems = [];
-    if (stable.length) bleItems.push(addFinding('medium', 'Identificadores estables cercanos', `${stable.length} dispositivo(s) cercano(s) podrían ser correlacionados en el tiempo. En equipos propios, activa privacidad BLE y actualiza firmware.`));
+    if (stable.length) bleItems.push(addFinding('medium', 'Identificadores estables cercanos', `${stable.length} dispositivo(s) cercano(s) usan una dirección pública o aleatoria estática, que puede repetirse entre sesiones y permitir correlacionarlos. En equipos propios, activa la privacidad BLE (direcciones privadas resolubles) y actualiza el firmware.`));
     if (connectable.length) bleItems.push(addFinding('info', 'Dispositivos conectables', `${connectable.length} dispositivo(s) cercano(s) aceptan conexión. Desactiva modo visible o emparejamiento cuando no se use.`));
-    if (!stable.length) bleItems.push(addFinding('info', 'Privacidad de direcciones', 'Los dispositivos cercanos observados usan direcciones aleatorias; esto reduce seguimiento pasivo, pero no garantiza seguridad.'));
+    if (!stable.length) bleItems.push(addFinding('info', 'Privacidad de direcciones', 'Ningún dispositivo cercano muestra una dirección pública ni aleatoria estática. Las direcciones privadas cambian con el tiempo y dificultan el seguimiento pasivo, pero no garantizan seguridad.'));
     elements.bleAdvice.innerHTML = bleItems.join('');
   }
 }
@@ -267,6 +293,8 @@ function loadHistory() {
 }
 
 function renderHistory() {
+  // Con IndexedDB disponible, history.js dibuja este panel a partir del historial completo.
+  if (window.VigiaHistory?.isReady()) { window.VigiaHistory.refresh(); return; }
   elements.historyCounter.textContent = `${scanHistory.length} ${scanHistory.length === 1 ? 'sesión' : 'sesiones'}`;
   elements.clearHistory.disabled = scanHistory.length === 0;
   if (!scanHistory.length) { elements.historyList.innerHTML = '<p class="empty-copy">Aún no hay análisis guardados.</p>'; return; }
@@ -277,11 +305,28 @@ function renderHistory() {
   </div>`).join('');
 }
 
-function saveCurrentReport() {
-  if (!currentReport) return;
+function sensorSnapshot() {
+  // Sólo lo que el sensor informó; lo desconocido queda en null para no presentar valores supuestos.
+  return { board: identity.board ?? null, chip: identity.chip ?? null, mac: identity.mac ? macLabel(identity.mac) : null, firmware: sensorFirmware, protocol: sensorProtocol };
+}
+
+// Resumen en localStorage: comportamiento original, usado si IndexedDB no está disponible o falla.
+function saveSummaryToLocalStorage() {
   scanHistory = [{ ...currentReport, wifiNetworks: undefined, bleDevices: undefined }, ...scanHistory].slice(0, 20);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(scanHistory));
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(scanHistory)); }
+  catch (error) { log(`No se pudo guardar el resumen local: ${error.message}`, 'error'); return false; }
   renderHistory();
+  return true;
+}
+
+async function saveCurrentReport(status = 'complete') {
+  if (!currentReport) return false;
+  const history = window.VigiaHistory;
+  if (history?.isReady()) {
+    try { await history.saveReport(currentReport, { status, sensor: sensorSnapshot() }); return true; }
+    catch (error) { log(`No se pudo guardar la evaluación completa: ${error.message}. Se guarda sólo el resumen.`, 'error'); }
+  }
+  return saveSummaryToLocalStorage();
 }
 
 function downloadBlob(filename, type, text) {
@@ -299,7 +344,7 @@ function downloadCsv() {
   if (!currentReport) return;
   const rows = [['TIPO','NOMBRE','RSSI','CANAL/DIRECCION','SEGURIDAD/PRIVACIDAD','CONECTABLE','FABRICANTE/SERVICIOS']];
   currentReport.wifiNetworks.forEach(item => rows.push(['Wi-Fi', item.ssid || '[oculta]', item.rssi, item.channel, authLabel(item.auth), '', item.bssid]));
-  currentReport.bleDevices.forEach(item => rows.push(['Bluetooth', item.name || '[sin nombre]', item.rssi, item.address, addressTypeLabel(item.address_type), item.connectable ? 'Sí' : 'No', `${manufacturerLabel(item.manufacturer_id)} ${item.services || ''}`]));
+  currentReport.bleDevices.forEach(item => rows.push(['Bluetooth', item.name || '[sin nombre]', item.rssi, item.address, addressTypeLabel(item.address_type, item.address), item.connectable ? 'Sí' : 'No', `${manufacturerLabel(item.manufacturer_id)} ${item.services || ''}`]));
   downloadBlob(`vigia-inventario-${Date.now()}.csv`, 'text/csv;charset=utf-8', '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n'));
 }
 
@@ -327,8 +372,8 @@ function handleLine(rawLine) {
   log(line);
   try {
     const event = JSON.parse(line);
-    if (event.protocol) elements.protocol.textContent = `VIGIA/${event.protocol}`;
-    if (event.type === 'ready') { elements.detailFirmware.textContent = event.firmware; elements.status.textContent = `Firmware ${event.firmware} listo.`; }
+    if (event.protocol) { elements.protocol.textContent = `VIGIA/${event.protocol}`; sensorProtocol = Number(event.protocol) || null; }
+    if (event.type === 'ready') { sensorFirmware = event.firmware || null; elements.detailFirmware.textContent = event.firmware; elements.status.textContent = `Firmware ${event.firmware} listo.`; }
     if (event.type === 'pong') elements.status.textContent = 'Enlace validado correctamente.';
     if (event.type === 'identity') {
       identity = event; elements.detailBoard.textContent = event.board; elements.detailChip.textContent = event.chip; elements.detailMac.textContent = macLabel(event.mac) || '—';
@@ -339,9 +384,9 @@ function handleLine(rawLine) {
       elements.detailUptime.textContent = `${Math.round(event.uptime_ms / 1000)} segundos`;
       elements.status.textContent = `Memoria libre: ${event.heap_free.toLocaleString('es-MX')} bytes · Activo: ${Math.round(event.uptime_ms / 1000)} s`;
     }
-    if (event.type === 'wifi_scan_started') { networks = []; renderNetworks(); elements.status.textContent = 'Analizando redes Wi-Fi…'; }
-    if (event.type === 'wifi_ap') { networks.push(event); renderNetworks(); }
-    if (event.type === 'wifi_scan_finished') { elements.status.textContent = `Wi-Fi finalizado: ${event.count} redes detectadas.`; renderAnalysis(); }
+    if (event.type === 'wifi_scan_started') { networks = []; wifiTruncated = null; renderNetworks(); elements.status.textContent = 'Analizando redes Wi-Fi…'; }
+    if (event.type === 'wifi_ap') { networks.push(withValidFields(event, WIFI_FIELDS)); renderNetworks(); }
+    if (event.type === 'wifi_scan_finished') { wifiTruncated = typeof event.truncated === 'boolean' ? event.truncated : null; elements.status.textContent = `Wi-Fi finalizado: ${event.count} redes detectadas.`; renderAnalysis(); }
     if (event.type === 'deauth_monitor_started') {
       elements.deauthResult.textContent = `Monitor pasivo activo durante ${event.duration_s || 8} segundos…`;
       elements.packetResult.textContent = `Observando metadatos 802.11 durante ${event.duration_s || 8} segundos…`;
@@ -358,15 +403,17 @@ function handleLine(rawLine) {
       elements.packetMonitor.disabled = !writer;
       elements.status.textContent = 'Monitoreo defensivo finalizado.';
     }
-    if (event.type === 'ble_scan_started') { bleDevices = []; bleScanFailed = false; renderBleDevices(); elements.status.textContent = 'Analizando Bluetooth LE…'; }
+    if (event.type === 'ble_scan_started') { bleDevices = []; bleScanFailed = false; bleTruncated = null; renderBleDevices(); elements.status.textContent = 'Analizando Bluetooth LE…'; }
     if (event.type === 'ble_status') elements.status.textContent = event.ready ? 'Bluetooth LE disponible y listo.' : 'Bluetooth LE no pudo inicializarse.';
     if (event.type === 'ble_device') {
-      const existing = bleDevices.findIndex(device => device.address === event.address);
-      if (existing >= 0) bleDevices[existing] = event; else bleDevices.push(event);
+      const observed = withValidFields(event, BLE_FIELDS);
+      const existing = bleDevices.findIndex(device => device.address === observed.address);
+      if (existing >= 0) bleDevices[existing] = observed; else bleDevices.push(observed);
       renderBleDevices();
     }
     if (event.type === 'ble_scan_finished') {
       bleScanFailed = event.failed === true;
+      bleTruncated = typeof event.truncated === 'boolean' ? event.truncated : null;
       elements.status.textContent = bleScanFailed ? 'El inventario Bluetooth no pudo completarse.' : `Bluetooth finalizado: ${event.count} dispositivos únicos detectados.`;
       if (bleScanFailed) elements.bleSummary.textContent = 'El firmware reportó un fallo en el módulo BLE.';
       renderAnalysis();
@@ -400,7 +447,10 @@ async function readLoop() {
 async function openPort(selectedPort) {
   port = selectedPort;
   await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-  lineBuffer = '';
+  lineBuffer = ''; sensorFirmware = null; sensorProtocol = null;
+  // Otro sensor puede usar este puerto: no se conserva nada de la identidad anterior.
+  identity = {};
+  for (const element of [elements.detailBoard, elements.detailChip, elements.detailMac, elements.detailFirmware]) element.textContent = '—';
   writer = port.writable.getWriter(); setConnected(true); elements.port.textContent = 'Puerto autorizado';
   elements.status.textContent = 'Puerto abierto. Validando firmware…'; log('Puerto serial abierto a 115200 8N1', 'web');
   readLoopPromise = readLoop(); await new Promise(resolve => setTimeout(resolve, 250)); await sendCommand('PING');
@@ -434,6 +484,43 @@ async function sendAndWait(command, completionType, timeoutMs = 12000) {
   const completion = waitForEvent(completionType, timeoutMs); await sendCommand(command); return completion;
 }
 
+// Canales: la puntuación suma 5 puntos con 12 o más redes en un mismo canal válido (regla compartida con Android);
+// desde 4 redes sólo se ofrece un consejo de optimización, que no es un hallazgo de riesgo ni cambia la puntuación.
+const CONGESTION_SCORE_NETWORKS = 12;
+const CHANNEL_ADVICE_NETWORKS = 4;
+
+/** Canal válido con más redes, o null. Una red sin canal entero no pertenece a ningún canal. */
+function busiestChannel(list) {
+  const counts = list.filter(network => Number.isInteger(network.channel)).reduce((result, network) => ({ ...result, [network.channel]: (result[network.channel] || 0) + 1 }), {});
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return top ? { channel: Number(top[0]), count: top[1] } : null;
+}
+
+/**
+ * Avisos de canal de una muestra: `finding` (riesgo, sólo cuando la regla de puntuación aplica), `advice` (consejo de
+ * optimización del módulo Wi-Fi) y `recommendation`. Sin canal válido o con menos de 4 redes no se nombra ningún canal.
+ */
+function channelNotices(busiest) {
+  const scored = Boolean(busiest) && busiest.count >= CONGESTION_SCORE_NETWORKS;
+  const crowded = Boolean(busiest) && busiest.count >= CHANNEL_ADVICE_NETWORKS;
+  return {
+    finding: scored ? { severity: 'medium', title: `Canal ${busiest.channel} concentra ${busiest.count} redes`, detail: `Con ${CONGESTION_SCORE_NETWORKS} o más redes en un canal la evaluación suma 5 puntos. La congestión puede degradar la disponibilidad y producir falsos síntomas de ataque o interferencia.` } : null,
+    advice: crowded ? { severity: 'info', title: `Optimización: canal ${busiest.channel} ${scored ? 'saturado' : 'compartido'}`, detail: `${busiest.count} redes comparten el canal. Es un consejo de rendimiento, no un riesgo de seguridad; mide en varios horarios antes de cambiar la configuración.` } : null,
+    recommendation: crowded
+      ? { severity: 'info', title: 'Revisar canales 1, 6 y 11', detail: `Si los puntos de acceso son tuyos, redistribúyelos cuando el canal ${busiest.channel} muestre saturación persistente.` }
+      : { severity: 'info', title: 'Revisar canales 1, 6 y 11', detail: `Ningún canal reúne ${CHANNEL_ADVICE_NETWORKS} o más redes en esta muestra; no hace falta redistribuir puntos de acceso.` },
+  };
+}
+/**
+ * Aviso informativo para el modo 16 (WIFI_AUTH_WPA_ENTERPRISE). No suma puntos: el sensor no informa el cifrado, así
+ * que no se afirma que use TKIP ni que sea vulnerable.
+ */
+function legacyEnterpriseNotice(list) {
+  const count = list.filter(network => network.auth === 16).length;
+  return count ? { severity: 'info', title: `${count} red(es) WPA-Enterprise heredado`, detail: 'El sensor informa WPA (versión 1) con autenticación 802.1X. Merece revisión porque puede admitir cifrado heredado, pero Vigía no conoce el cifrado que usa, no confirma una vulnerabilidad y no lo puntúa como débil.' } : null;
+}
+const noticeHtml = notice => addFinding(notice.severity, notice.title, notice.detail);
+
 function addFinding(severity, title, detail) {
   return `<div class="finding ${severity}"><span>${severity === 'high' ? 'ALTO' : severity === 'medium' ? 'MEDIO' : 'INFO'}</span><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(detail)}</p></div></div>`;
 }
@@ -444,18 +531,19 @@ function renderAnalysis() {
   const weak = networks.filter(network => network.auth === 1 || network.auth === 2);
   const hidden = networks.filter(network => !network.ssid);
   const strongOpen = open.filter(network => network.rssi >= -70);
-  const channels = networks.reduce((counts, network) => ({ ...counts, [network.channel]: (counts[network.channel] || 0) + 1 }), {});
-  const busiest = Object.entries(channels).sort((a, b) => b[1] - a[1])[0];
+  // Igual que Android: una red sin canal válido no forma parte de ningún canal.
+  const busiest = busiestChannel(networks);
   const nearbyBle = bleDevices.filter(device => device.rssi >= -65);
   const connectableBle = bleDevices.filter(device => device.connectable);
-  const stableNearbyBle = nearbyBle.filter(device => !String(device.address_type).includes('random'));
+  // Versión 3: sólo una dirección pública o aleatoria estática es un identificador estable; privada o no determinada no suma.
+  const stableNearbyBle = nearbyBle.filter(device => bleAddress().isStable(bleAddress().classify(device.address_type, device.address)));
   const unnamedBle = bleDevices.filter(device => !device.name);
   let score = 0;
   score += Math.min(40, open.length * 3);
   score += Math.min(25, strongOpen.length * 5);
   score += Math.min(25, weak.length * 12);
   if (total && open.length / total >= .25) score += 10;
-  if (busiest && Number(busiest[1]) >= 12) score += 5;
+  if (busiest && busiest.count >= CONGESTION_SCORE_NETWORKS) score += 5;
   score += Math.min(10, stableNearbyBle.filter(device => device.connectable).length * 2);
   score = Math.min(100, score);
   const level = score >= 60 ? 'ALTO' : score >= 30 ? 'MEDIO' : 'BAJO';
@@ -483,9 +571,12 @@ function renderAnalysis() {
   if (strongOpen.length) findings.push(addFinding('high', `${strongOpen.length} redes abiertas con señal cercana`, 'Una red abierta no cifra el tráfico radio. Confirma si pertenecen a la organización y si usan aislamiento o portal cautivo.'));
   else if (open.length) findings.push(addFinding('medium', `${open.length} redes abiertas detectadas`, 'La señal es lejana, pero conviene validar su propósito y segmentación.'));
   if (weak.length) findings.push(addFinding('high', `${weak.length} redes con seguridad heredada`, 'WEP o WPA antiguo no ofrecen protección adecuada frente a ataques actuales.'));
+  const legacyEnterprise = legacyEnterpriseNotice(networks);
+  if (legacyEnterprise) findings.push(noticeHtml(legacyEnterprise));
   if (hidden.length) findings.push(addFinding('info', `${hidden.length} redes sin SSID visible`, 'Ocultar el nombre no sustituye autenticación ni cifrado; documenta estos puntos de acceso.'));
-  if (busiest) findings.push(addFinding('medium', `Canal ${busiest[0]} concentra ${busiest[1]} redes`, 'La congestión puede degradar disponibilidad y producir falsos síntomas de ataque o interferencia.'));
-  if (stableNearbyBle.length) findings.push(addFinding('medium', `${stableNearbyBle.length} dispositivos BLE cercanos con identificador estable`, 'Una dirección no aleatoria puede facilitar el seguimiento de presencia. Confirma que sean equipos autorizados y actualizados.'));
+  const channel = channelNotices(busiest);
+  if (channel.finding) findings.push(noticeHtml(channel.finding));
+  if (stableNearbyBle.length) findings.push(addFinding('medium', `${stableNearbyBle.length} dispositivos BLE cercanos con identificador estable`, 'Una dirección pública o aleatoria estática puede repetirse entre sesiones (la estática sólo cambia si el dispositivo la regenera) y facilitar el seguimiento de presencia. Confirma que sean equipos autorizados y actualizados.'));
   if (connectableBle.length) findings.push(addFinding('info', `${connectableBle.length} dispositivos BLE aceptan conexión`, 'Ser conectable es normal; limita el emparejamiento y desactiva Bluetooth cuando no sea necesario.'));
   if (unnamedBle.length) findings.push(addFinding('info', `${unnamedBle.length} anuncios BLE sin nombre`, 'La ausencia de nombre no implica amenaza. Usa fabricante, servicios y repetición temporal para inventariarlos.'));
   if (bleScanFailed) findings.push(addFinding('medium', 'Inventario Bluetooth incompleto', 'El sensor no pudo iniciar BLE; el resultado Wi-Fi sigue siendo válido, pero el análisis no debe presentarse como cobertura total.'));
@@ -496,15 +587,15 @@ function renderAnalysis() {
   if (open.length) recommendations.push(addFinding('high', 'Validar redes abiertas', 'Identifica al propietario, habilita WPA2/WPA3 cuando corresponda y separa invitados de sistemas internos.'));
   if (weak.length) recommendations.push(addFinding('high', 'Retirar cifrado heredado', 'Migra WEP/WPA a WPA2-AES o WPA3 y cambia credenciales compartidas.'));
   if (stableNearbyBle.length) recommendations.push(addFinding('medium', 'Revisar privacidad Bluetooth', 'En equipos propios, habilita direcciones privadas resolubles, instala actualizaciones y elimina emparejamientos obsoletos.'));
-  recommendations.push(addFinding('medium', 'Revisar canales 1, 6 y 11', `Redistribuye puntos de acceso si el canal ${busiest?.[0] || 'principal'} muestra saturación persistente.`));
+  recommendations.push(noticeHtml(channel.recommendation));
   recommendations.push(addFinding('info', 'Repetir desde otros puntos', 'Este resultado es una fotografía local. Compara mediciones y registra cambios inesperados de BSSID o seguridad.'));
   elements.recommendations.innerHTML = recommendations.join('');
   renderModuleAdvice();
   currentReport = {
-    schema: 'vigia-suite-report/1', createdAt: new Date().toISOString(), score, level,
+    schema: 'vigia-suite-report/1', createdAt: new Date().toISOString(), score, level, scoreFormula: SCORE_FORMULA_VERSION,
     sensor: { board: identity.board || 'NodeMCU ESP-32S', chip: identity.chip || 'ESP32', mac: macLabel(identity.mac), firmware: elements.detailFirmware.textContent, protocol: elements.protocol.textContent },
-    wifi: { total, open: open.length, legacy: weak.length, hidden: hidden.length, busiestChannel: busiest ? Number(busiest[0]) : null, busiestCount: busiest ? Number(busiest[1]) : 0 },
-    bluetooth: { total: bleDevices.length, nearby: nearbyBle.length, connectable: connectableBle.length, stableNearby: stableNearbyBle.length, scanFailed: bleScanFailed },
+    wifi: { total, open: open.length, legacy: weak.length, hidden: hidden.length, busiestChannel: busiest ? busiest.channel : null, busiestCount: busiest ? busiest.count : 0, truncated: wifiTruncated },
+    bluetooth: { total: bleDevices.length, nearby: nearbyBle.length, connectable: connectableBle.length, stableNearby: stableNearbyBle.length, scanFailed: bleScanFailed, truncated: bleTruncated },
     wifiNetworks: networks.map(item => ({ ...item })), bleDevices: bleDevices.map(item => ({ ...item })),
     disclaimer: 'Observación pasiva local. Un hallazgo no demuestra por sí mismo una vulnerabilidad explotable.'
   };
@@ -515,15 +606,22 @@ function renderAnalysis() {
 async function runFullAnalysis() {
   if (!writer || analysisRunning) return;
   analysisRunning = true; currentReport = null; elements.exportJson.disabled = true; elements.exportCsv.disabled = true;
+  // Igual que Android: la evaluación empieza sin resultados previos. Si INFO no responde, no se guarda de nuevo la
+  // muestra anterior (que podía ser de otro sensor) como una evaluación incompleta.
+  networks = []; bleDevices = []; wifiTruncated = null; bleTruncated = null; bleScanFailed = false; renderNetworks(); renderBleDevices();
   setConnected(true); showView('analisis'); elements.analysisProgress.hidden = false;
   try {
     elements.analysisStage.textContent = 'Validando identidad del sensor…'; await sendAndWait('INFO', 'identity', 4000);
     elements.analysisStage.textContent = 'Midiendo estado y memoria…'; await sendAndWait('STATUS', 'status', 4000);
-    elements.analysisStage.textContent = 'Inventariando redes Wi-Fi…'; await sendAndWait('SCAN_WIFI', 'wifi_scan_finished', 15000);
-    elements.analysisStage.textContent = 'Inventariando dispositivos Bluetooth…'; await sendAndWait('SCAN_BLE', 'ble_scan_finished', 12000);
-    renderAnalysis(); saveCurrentReport(); elements.analysisStage.textContent = 'Análisis finalizado y guardado localmente.';
+    elements.analysisStage.textContent = 'Inventariando redes Wi-Fi…'; const wifiResult = await sendAndWait('SCAN_WIFI', 'wifi_scan_finished', 15000);
+    elements.analysisStage.textContent = 'Inventariando dispositivos Bluetooth…'; const bleResult = await sendAndWait('SCAN_BLE', 'ble_scan_finished', 12000);
+    renderAnalysis();
+    const saved = await saveCurrentReport(wifiResult?.failed || bleResult?.failed ? 'partial' : 'complete');
+    elements.analysisStage.textContent = saved ? 'Análisis finalizado y guardado localmente.' : 'Análisis finalizado, pero no se pudo guardar en este navegador.';
   } catch (error) {
     log(error.message, 'error'); elements.analysisStage.textContent = 'Análisis parcial: revisa el módulo indicado.'; renderAnalysis();
+    // Una evaluación interrumpida con datos se conserva marcada como incompleta.
+    if (currentReport) await saveCurrentReport('partial');
   } finally {
     setTimeout(() => { elements.analysisProgress.hidden = true; }, 1200);
     analysisRunning = false; setConnected(true);
@@ -570,7 +668,11 @@ elements.bleFilters.forEach(button => button.addEventListener('click', () => {
   bleFilter = button.dataset.bleFilter; elements.bleFilters.forEach(item => item.classList.toggle('active', item === button)); renderBleDevices();
 }));
 elements.exportJson.addEventListener('click', downloadJson); elements.exportCsv.addEventListener('click', downloadCsv);
-elements.clearHistory.addEventListener('click', () => { scanHistory = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); });
+elements.clearHistory.addEventListener('click', () => {
+  if (window.VigiaHistory?.isReady()) { window.VigiaHistory.requestClearAll(); return; }
+  if (!window.confirm('¿Eliminar todos los resúmenes guardados en este navegador? No se puede deshacer.')) return;
+  scanHistory = []; try { localStorage.removeItem(HISTORY_KEY); } catch {} renderHistory();
+});
 elements.clear.addEventListener('click', () => { elements.terminal.textContent = `[${timestamp()}] [sistema] Consola limpia.`; });
 elements.hiddenInspector?.addEventListener('click', inspectHiddenAps);
 elements.saveBaseline?.addEventListener('click', saveWifiBaseline);
@@ -607,6 +709,8 @@ window.VigiaApp = Object.freeze({
   connectPort: selectedPort => connect(selectedPort),
   showView: name => showView(name),
   log: (message, kind = 'instalador') => log(message, kind),
+  // Etiquetas de presentación para history.js: el historial muestra los datos con los mismos textos que el dashboard.
+  labels: Object.freeze({ authLabel, addressTypeLabel, manufacturerLabel }),
 });
 
 (async () => {
