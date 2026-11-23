@@ -60,7 +60,8 @@ El ESP-32S no tiene USB nativo. La comunicación pasa por el convertidor USB-UAR
 - Reinicio controlado con `REBOOT`.
 - Límite de 32 resultados por análisis para proteger la memoria del sensor.
 - Uso local: los resultados no se envían a Internet.
-- Navegación por apartados: Inicio, Resumen, Redes Wi-Fi, Bluetooth y Sistema.
+- Navegación por apartados: Inicio, Resumen, Redes Wi-Fi, Bluetooth, Historial y Sistema.
+- Historial local en IndexedDB: cada evaluación conserva sus redes Wi-Fi y dispositivos BLE; permite abrir el detalle, comparar dos evaluaciones (redes nuevas, desaparecidas, cambios de canal, de autenticación y de nombre por BSSID), eliminar una o todas y definir una política de conservación. Los resúmenes anteriores de `localStorage` se migran como evaluaciones históricas.
 - Interfaz 0.8 monocromática con navegación lateral en escritorio, navegación compacta en móvil y acciones ordenadas por tarea.
 - Cada herramienta incluye un apartado desplegable con su propósito, datos entregados, límites y orden recomendado de uso.
 - Análisis guiado que ejecuta los módulos de forma secuencial y evita escaneos solapados.
@@ -95,7 +96,7 @@ El firmware oficial se publica en `pc-lab/firmware/` con su `manifest.json`. Par
 5. Si la placa todavía no tiene Vigía, usa **Preparar ESP32**. El helper local de **Sistema → Helper local (desarrollo)** sigue disponible solo para desarrolladores.
 6. Pulsa **Conectar sensor**, autoriza el puerto y ejecuta los módulos de enlace, identidad, diagnóstico, Wi-Fi y Bluetooth.
 
-Pruebas sin hardware: `npm test` (Node 20 o posterior, sin dependencias).
+Pruebas sin hardware: `npm test` (Node 20 o posterior, sin dependencias). Las pruebas del historial en IndexedDB abren Edge o Chrome sin interfaz (o el navegador indicado en `VIGIA_TEST_BROWSER`) y requieren Node 22 o posterior; si falta alguno de los dos, se omiten.
 
 La portada usa 192 cuadros WebP del MP4 original: 1280×720 para escritorio y 768×432 para móvil. El desplazamiento controla el cuadro mostrado y funciona en ambos sentidos. Para regenerar las secuencias usa `scripts/extract-product-frames.ps1`.
 
@@ -127,7 +128,7 @@ Selecciona **ESP32 Dev Module**, **Partition Scheme: Huge APP (3MB No OTA/1MB SP
 
 ## Arquitectura
 
-- Web/PWA: HTML, CSS y JavaScript; Web Serial para usar el sensor.
+- Web/PWA: HTML, CSS y JavaScript; Web Serial para usar el sensor; IndexedDB para el historial (`history-core.js`, `history-store.js`, `history.js`).
 - Asistente local: PowerShell + Arduino CLI para detectar y preparar el ESP32.
 - Android: repositorio independiente enlazado arriba.
 - Firmware: Arduino-ESP32 con Wi-Fi y BLE.
