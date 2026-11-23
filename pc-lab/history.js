@@ -16,7 +16,7 @@ const state = { store: null, ready: false, assessments: [], selected: new Set(),
 const app = () => window.VigiaApp;
 const labels = () => app()?.labels || {};
 const auth = value => (value === null ? 'No informado' : labels().authLabel?.(value) ?? `Modo ${value}`);
-const addressType = value => (value === 'unknown' ? 'No informado' : labels().addressTypeLabel?.(value) ?? value);
+const addressType = (value, address) => (value === 'unknown' ? 'No informado' : labels().addressTypeLabel?.(value, address) ?? value);
 const manufacturer = value => (value === null ? 'Sin fabricante' : labels().manufacturerLabel?.(value) ?? String(value));
 const escapeHtml = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 const unknown = value => (value === null || value === undefined ? 'No disponible' : value);
@@ -124,7 +124,7 @@ function bleTable(items) {
   if (!items.length) return '<p class="empty-copy">Sin dispositivos registrados en esta evaluación.</p>';
   return `<div class="table-wrap"><table><thead><tr><th>NOMBRE</th><th>RSSI</th><th>DIRECCIÓN</th><th>TIPO</th><th>CONEXIÓN</th><th>FABRICANTE / SERVICIOS</th></tr></thead><tbody>${[...items].sort((a, b) => (b.rssi ?? -999) - (a.rssi ?? -999)).map(item => `<tr>
     <td>${escapeHtml(item.name || '[sin nombre]')}</td><td>${escapeHtml(rssiLabel(item.rssi))}</td><td>${escapeHtml(item.address ?? 'No informada')}</td>
-    <td>${escapeHtml(addressType(item.addressType))}</td><td>${item.connectable === null ? 'No informado' : item.connectable ? 'Sí' : 'No'}</td>
+    <td>${escapeHtml(addressType(item.addressType, item.address))}</td><td>${item.connectable === null ? 'No informado' : item.connectable ? 'Sí' : 'No'}</td>
     <td><strong>${escapeHtml(manufacturer(item.manufacturerId))}</strong><small class="cell-detail">${escapeHtml(item.services || 'Sin servicios anunciados')}</small></td></tr>`).join('')}</tbody></table></div>`;
 }
 
@@ -139,6 +139,7 @@ async function openDetail(id) {
     <div class="history-detail-grid">
       <dl class="history-facts">
         <div><dt>Puntuación</dt><dd>${item.score}/100 · ${escapeHtml(item.level)}</dd></div>
+        <div><dt>Fórmula</dt><dd>${escapeHtml(core.storedFormula(item) === null ? 'No registrada' : `Versión ${core.storedFormula(item)}`)}</dd></div>
         <div><dt>Estado</dt><dd>${escapeHtml(STATUS_LABEL[item.status] || item.status)}</dd></div>
         <div><dt>Observaciones</dt><dd>${escapeHtml(unknown(item.wifiCount))} Wi-Fi · ${escapeHtml(unknown(item.bleCount))} BLE</dd></div>
         <div><dt>Wi-Fi truncado</dt><dd>${escapeHtml(truncated(item.wifiTruncated))}</dd></div>
@@ -233,7 +234,7 @@ async function saveReport(report, { status = core.STATUS.COMPLETE, sensor = {} }
     id, createdAt: report.createdAt, origin: 'web', status, sensor, score: report.score, level: report.level,
     wifiNetworks: report.wifiNetworks || [], bleDevices: report.bleDevices || [],
     wifiTruncated: report.wifi?.truncated ?? null, bleTruncated: report.bluetooth?.truncated ?? null,
-    bleFailed: report.bluetooth?.scanFailed ?? null,
+    bleFailed: report.bluetooth?.scanFailed ?? null, scoreFormula: report.scoreFormula ?? null,
   });
   await state.store.saveAssessment(record);
   await refresh();

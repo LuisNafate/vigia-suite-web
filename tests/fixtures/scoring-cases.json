@@ -1,6 +1,6 @@
 {
   "description": "Casos de puntuación compartidos por vigia-suite-android (app/src/test/resources/scoring-cases.json) y vigia-suite-web (tests/fixtures/scoring-cases.json). Los dos archivos deben ser idénticos. wifi y ble usan los campos de los eventos wifi_ap y ble_device de VIGIA/2; un campo ausente no se envió.",
-  "formula": "min(40, abiertas×3) + min(25, abiertas con RSSI ≥ -70 × 5) + min(25, WEP/WPA × 12) + min(10, BLE cercano (≥ -65), conectable y sin dirección aleatoria × 2) + 10 si ≥ 25 % abiertas + 5 si un canal tiene ≥ 12 redes; máximo 100. ALTO ≥ 60, MEDIO ≥ 30.",
+  "formula": "Versión 3. min(40, abiertas×3) + min(25, abiertas con RSSI ≥ -70 × 5) + min(25, WEP/WPA × 12) + min(10, BLE cercano (≥ -65), conectable y con identificador estable × 2) + 10 si ≥ 25 % abiertas + 5 si un canal tiene ≥ 12 redes; máximo 100. ALTO ≥ 60, MEDIO ≥ 30. Identificador estable: address_type public, o random con los dos bits altos del primer byte en 11 (aleatoria estática), y una dirección válida. Privadas, identidades resueltas (tipos 2 y 3) y tipos o direcciones no determinados no suman.",
   "cases": [
     {
       "name": "sin observaciones",
@@ -755,7 +755,7 @@
     },
     {
       "name": "privacidad BLE",
-      "why": "Cuentan public_identity a -60 y public a -65 (conectables, no aleatorias): 2 × 2.",
+      "why": "Versión 3: sólo cuenta public a -65 (conectable): 2. random 11:… es privada no resoluble (bits 00) y public_identity/random_identity son identidades resueltas. Con la versión 2 eran 4, porque public_identity contaba como estable.",
       "wifi": [],
       "ble": [
         {
@@ -802,7 +802,7 @@
         }
       ],
       "expected": {
-        "score": 4,
+        "score": 2,
         "level": "BAJO"
       }
     },
@@ -1589,6 +1589,342 @@
       "ble": [],
       "expected": {
         "score": 24,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE pública cercana y conectable",
+      "why": "Dirección pública estable a -50 y conectable: 2.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "Pub",
+          "address": "88:8e:68:12:34:56",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 2,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE aleatoria estática cercana y conectable",
+      "why": "random con primer byte 0xC4 (bits 11) es aleatoria estática: suma 2 como una pública.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "Est",
+          "address": "c4:12:34:56:78:9a",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 2,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE aleatoria estática sin cercanía o sin conexión",
+      "why": "Se mantienen las condiciones: a -66 dBm no es cercana y la no conectable no suma; a -65 sí: 2.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "Lejana",
+          "address": "c4:12:34:56:78:01",
+          "address_type": "random",
+          "rssi": -66,
+          "connectable": true
+        },
+        {
+          "name": "Anuncio",
+          "address": "c4:12:34:56:78:02",
+          "address_type": "random",
+          "rssi": -40,
+          "connectable": false
+        },
+        {
+          "name": "Limite",
+          "address": "c4:12:34:56:78:03",
+          "address_type": "random",
+          "rssi": -65,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 2,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE privadas resolubles y no resolubles",
+      "why": "Bits 01 (0x7A, 0x40) y 00 (0x3F, 0x01) son privadas: no suman aunque estén cerca y sean conectables.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "Rpa1",
+          "address": "7a:12:34:56:78:9a",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Rpa2",
+          "address": "40:00:00:00:00:01",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Nrpa1",
+          "address": "3f:12:34:56:78:9a",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Nrpa2",
+          "address": "01:22:33:44:55:c0",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE identidades resueltas",
+      "why": "Tipos 2 y 3: la dirección es la identidad resuelta con una IRK, no la observable por terceros; no suman.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "IdPub",
+          "address": "88:8e:68:12:34:56",
+          "address_type": "public_identity",
+          "rssi": -40,
+          "connectable": true
+        },
+        {
+          "name": "IdRnd",
+          "address": "c4:12:34:56:78:9a",
+          "address_type": "random_identity",
+          "rssi": -40,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE tipo ausente, desconocido o con otro formato",
+      "why": "Un tipo no determinado no suma por estabilidad (con la versión 2 sumaba todo tipo sin «random»).",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "SinTipo",
+          "address": "88:8e:68:12:34:01",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Desconocido",
+          "address": "88:8e:68:12:34:02",
+          "address_type": "unknown",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Mayus",
+          "address": "c4:12:34:56:78:03",
+          "address_type": "RANDOM",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Numero",
+          "address": "c4:12:34:56:78:04",
+          "address_type": 1,
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Nulo",
+          "address": "88:8e:68:12:34:05",
+          "address_type": null,
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Vacio",
+          "address": "88:8e:68:12:34:06",
+          "address_type": "",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE direcciones inválidas o reservadas",
+      "why": "Sin una dirección válida no se determina el subtipo; bits 10 son reservados. Ninguna suma, tampoco la pública sin dirección válida.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "Reservada",
+          "address": "80:12:34:56:78:9a",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "SinSeparador",
+          "address": "c4123456789a",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "NoHex",
+          "address": "zz:12:34:56:78:9a",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "SinDireccion",
+          "address": "",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "PublicaCorta",
+          "address": "88:8e:68:12:34",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 0,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE formatos y orden de bytes",
+      "why": "Mayúsculas y guiones son válidos. El primer byte impreso decide: c0:…:01 es estática (2), 01:…:c0 es no resoluble (0). Pública + pública + estática + estática = 8.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "PubMayus",
+          "address": "88:8E:68:12:34:56",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "PubGuion",
+          "address": "88-8E-68-12-34-57",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "EstGuion",
+          "address": "C4-12-34-56-78-9A",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "EstPrimerByte",
+          "address": "c0:22:33:44:55:01",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "NrpaPrimerByte",
+          "address": "01:22:33:44:55:c0",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 8,
+        "level": "BAJO"
+      }
+    },
+    {
+      "name": "BLE tope de 10 con públicas y estáticas",
+      "why": "4 públicas y 3 estáticas cercanas y conectables: 7 × 2 = 14, con tope 10.",
+      "wifi": [],
+      "ble": [
+        {
+          "name": "Pub0",
+          "address": "88:8e:68:12:34:00",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Pub1",
+          "address": "88:8e:68:12:34:01",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Pub2",
+          "address": "88:8e:68:12:34:02",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Pub3",
+          "address": "88:8e:68:12:34:03",
+          "address_type": "public",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Est0",
+          "address": "c4:12:34:56:78:00",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Est1",
+          "address": "c4:12:34:56:78:01",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        },
+        {
+          "name": "Est2",
+          "address": "c4:12:34:56:78:02",
+          "address_type": "random",
+          "rssi": -50,
+          "connectable": true
+        }
+      ],
+      "expected": {
+        "score": 10,
         "level": "BAJO"
       }
     }

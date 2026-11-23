@@ -1,5 +1,7 @@
 // Extrae funciones de pc-lab/app.js (script clásico, sin exportaciones) para probarlas tal como están escritas.
 import { readFile } from 'node:fs/promises';
+// app.js usa globalThis.VigiaBleAddress, que ble-address.js publica antes de que se cargue app.js.
+import '../pc-lab/ble-address.js';
 
 const appSource = () => readFile(new URL('../pc-lab/app.js', import.meta.url), 'utf8');
 const pick = (source, pattern) => {
@@ -23,7 +25,22 @@ export async function loadFieldFilter() {
 export async function loadScoring() {
   const app = await appSource();
   const source = pick(app, /const total = networks\.length;[\s\S]*?const level = [^\n]*/);
-  return new Function('networks', 'bleDevices', `${channelSource(app)}\n${source}; return { score, level };`);
+  const ble = pick(app, /const bleAddress = .*;/);
+  return new Function('networks', 'bleDevices', `${ble}\n${channelSource(app)}\n${source}; return { score, level };`);
+}
+
+/** Etiqueta de privacidad y clasificación BLE que usa app.js (SCORE_FORMULA_VERSION incluida). */
+export async function loadBleLabels() {
+  const app = await appSource();
+  const source = [/const SCORE_FORMULA_VERSION = .*;/, /const bleAddress = .*;/, /const bleClass = .*;/, /function addressTypeLabel\(type, address\) \{.*\}/]
+    .map(pattern => pick(app, pattern)).join('\n');
+  return new Function(`${source}; return { SCORE_FORMULA_VERSION, addressTypeLabel, bleClass };`)();
+}
+
+/** legacyEnterpriseNotice(): aviso informativo del modo 16, sin puntos. */
+export async function loadLegacyEnterpriseNotice() {
+  const app = await appSource();
+  return new Function(`${pick(app, /function legacyEnterpriseNotice\(list\) \{[\s\S]*?^\}/m)}; return legacyEnterpriseNotice;`)();
 }
 
 const channelSource = app => [/const CONGESTION_SCORE_NETWORKS = .*;/, /const CHANNEL_ADVICE_NETWORKS = .*;/,

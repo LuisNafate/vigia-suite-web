@@ -182,7 +182,7 @@ test('flujo completo con sensor simulado: VIGIA/2, puntuación sin cambios y eva
     await page.evaluate(`document.querySelector('[data-history-open]').click()`);
     await page.waitFor(`!document.querySelector('#historyDetail').hidden`);
     const detail = await page.evaluate(`document.querySelector('#historyDetail').textContent`);
-    for (const text of ['32/100 · MEDIO', 'Completa', '3 Wi-Fi · 1 BLE', 'Sí, se alcanzó el límite del sensor', 'nodemcu-esp32s', '04:B2:47:82:60:1C', '0.5.0-arduino', 'VIGIA/2', 'AA:AA:AA:AA:AA:03', '[oculta]', 'WEP', '11:22:33:44:55:66', 'Apple'])
+    for (const text of ['32/100 · MEDIO', 'Versión 3', 'Pública', 'Completa', '3 Wi-Fi · 1 BLE', 'Sí, se alcanzó el límite del sensor', 'nodemcu-esp32s', '04:B2:47:82:60:1C', '0.5.0-arduino', 'VIGIA/2', 'AA:AA:AA:AA:AA:03', '[oculta]', 'WEP', '11:22:33:44:55:66', 'Apple'])
       assert.ok(detail.includes(text), `el detalle debería incluir «${text}»`);
     assert.equal(await page.evaluate(`localStorage.getItem('vigia-suite-analysis-history-v1')`), null, 'con IndexedDB ya no se escriben resúmenes en localStorage');
   });

@@ -1,5 +1,6 @@
 // Lógica pura del historial de Vigía Suite (sin DOM ni IndexedDB), compartida por history.js y las pruebas.
 // El modelo lógico es equivalente al de Android (HistoryModels.kt): mismos campos, estados y criterios de comparación.
+import './ble-address.js';
 
 export const HISTORY_SCHEMA = 'vigia-history/1';
 export const LEGACY_WEB_HISTORY_KEY = 'vigia-suite-analysis-history-v1';
@@ -12,6 +13,12 @@ export const RETENTION_AGE_OPTIONS = Object.freeze([30, 90, 365, 0]);
 // 100 evaluaciones sin límite de antigüedad: conserva al menos las 20 sesiones que ya guardaba la versión anterior.
 export const DEFAULT_RETENTION = Object.freeze({ maxCount: 100, maxAgeDays: 0 });
 export const BLE_ADDRESS_TYPES = Object.freeze(['public', 'random', 'public_identity', 'random_identity']);
+/**
+ * Primera versión de la fórmula con la clasificación BLE por subtipo de dirección (ble-address.js). La versión se
+ * guarda en assessment.scoreFormula al crear la evaluación (app.js: SCORE_FORMULA_VERSION). Las evaluaciones
+ * anteriores no la tienen: se leen como null («no registrada») y nunca se completa ni se recalcula su puntuación.
+ */
+export const BLE_RULE_SINCE = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAC_RE = /^[0-9A-F]{2}(?::[0-9A-F]{2}){5}$/;
 
@@ -82,7 +89,7 @@ const levelFor = score => (score >= 60 ? 'ALTO' : score >= 30 ? 'MEDIO' : 'BAJO'
  * La puntuación y el nivel se copian tal cual: el historial no recalcula ni modifica la fórmula existente.
  */
 export function buildAssessment({ id, createdAt, origin = 'web', status = STATUS.COMPLETE, sensor = {}, score, level,
-  wifiNetworks = [], bleDevices = [], wifiTruncated = null, bleTruncated = null, bleFailed = null }) {
+  wifiNetworks = [], bleDevices = [], wifiTruncated = null, bleTruncated = null, bleFailed = null, scoreFormula = null }) {
   const created = typeof createdAt === 'number' ? createdAt : Date.parse(createdAt);
   if (!id) throw new Error('La evaluación necesita un identificador.');
   if (!Number.isFinite(created)) throw new Error('La evaluación necesita una fecha válida.');
@@ -99,7 +106,7 @@ export function buildAssessment({ id, createdAt, origin = 'web', status = STATUS
       wifiOpen: wifi.filter(item => item.auth === 0).length,
       bleNearby: ble.filter(item => item.rssi !== null && item.rssi >= -65).length,
       wifiTruncated: boolOrNull(wifiTruncated), bleTruncated: boolOrNull(bleTruncated), bleFailed: boolOrNull(bleFailed),
-      hasObservations: true,
+      hasObservations: true, scoreFormula: observedInt(scoreFormula, 1, 1000),
     },
     wifi, ble,
   };
@@ -128,7 +135,7 @@ export function legacyWebRecordToAssessment(raw) {
     wifiCount: intOrNull(wifi.total, 0, 10000), bleCount: intOrNull(bluetooth.total, 0, 10000),
     wifiOpen: intOrNull(wifi.open, 0, 10000), bleNearby: intOrNull(bluetooth.nearby, 0, 10000),
     wifiTruncated: null, bleTruncated: null, bleFailed: boolOrNull(bluetooth.scanFailed),
-    hasObservations: false,
+    hasObservations: false, scoreFormula: null,
   };
 }
 
@@ -250,6 +257,50 @@ function strongestByKey(items, keyOf) {
   return map;
 }
 
+/** Versión de fórmula guardada, o null si la evaluación no la registra (las anteriores a la versión 3 en Web). */
+export function storedFormula(assessment) { return observedInt(assessment?.scoreFormula, 1, 1000); }
+
+/** Si la puntuación guardada pudo calcularse sin la clasificación BLE de la versión 3. null cuenta como «pudo». */
+export function mayLackBleRule(assessment) {
+  const version = storedFormula(assessment);
+  return version === null || version < BLE_RULE_SINCE;
+}
+
+/**
+ * Efecto de la clasificación BLE de la versión 3 sobre una evaluación puntuada sin ella.
+ * - Con observaciones: diferencia exacta de los puntos BLE ({ delta }), calculada con lo guardado; 0 = no le afecta.
+ * - Resumen histórico: sólo se descarta si no tenía dispositivos cercanos; si no, la diferencia no se puede comprobar
+ *   ({ delta: null }).
+ */
+export function bleRuleEffect(detail) {
+  if (!detail.assessment.hasObservations) return { delta: detail.assessment.bleNearby === 0 ? 0 : null };
+  const { current, previous } = globalThis.VigiaBleAddress.blePoints(detail.ble);
+  return { delta: current - previous };
+}
+
+const signedPoints = delta => `${delta > 0 ? '+' : '−'}${Math.abs(delta)} punto(s)`;
+
+/**
+ * Advertencia por la versión de la fórmula, o null. Sólo cuando exactamente una de las dos evaluaciones pudo puntuarse
+ * sin la regla BLE (si ninguna o ambas, usan la misma regla) y la regla cambiaría su parte BLE. Se presenta como
+ * comprobada sólo si la evaluación registra su versión y conserva observaciones.
+ */
+export function formulaWarning(before, after) {
+  const withoutRule = [before, after].filter(detail => mayLackBleRule(detail.assessment));
+  if (withoutRule.length !== 1) return null;
+  const [detail] = withoutRule;
+  const { delta } = bleRuleEffect(detail);
+  if (delta === 0) return null;
+  const version = storedFormula(detail.assessment);
+  if (delta === null) {
+    return { kind: 'possible', delta, text: 'Una de las evaluaciones es un resumen histórico sin versión de fórmula registrada y con dispositivos BLE cercanos. La clasificación BLE de la versión 3 (pública o aleatoria estática cuenta como estable; privada o no determinada no) pudo cambiar su puntuación, pero sin observaciones no se puede comprobar.' };
+  }
+  if (version === null) {
+    return { kind: 'possible', delta, text: `Una de las evaluaciones no registra su versión de fórmula. Si se calculó antes de la versión 3, la clasificación BLE corregida cambiaría su parte BLE en ${signedPoints(delta)} según sus observaciones guardadas; no se puede confirmar qué fórmula se usó.` };
+  }
+  return { kind: 'confirmed', delta, text: `Una de las evaluaciones se puntuó con la fórmula ${version}. Con la clasificación BLE de la versión 3 su parte BLE cambiaría en ${signedPoints(delta)} (comprobado con sus observaciones guardadas): esa parte de la diferencia se debe a la fórmula y no al entorno.` };
+}
+
 /**
  * Compara dos evaluaciones. La más antigua es la referencia, sin importar el orden de los argumentos.
  * Wi-Fi: la identidad de una red es su BSSID. Un BSSID igual con otro SSID es un cambio de nombre, no una red nueva.
@@ -266,6 +317,8 @@ export function compareAssessments(left, right) {
   if (a.bleTruncated || b.bleTruncated) warnings.push('El inventario BLE alcanzó el límite de 32 dispositivos del sensor.');
   if (a.bleFailed || b.bleFailed) warnings.push('El escaneo Bluetooth falló en una de las evaluaciones: la comparación BLE no es representativa.');
   if (a.status === STATUS.PARTIAL || b.status === STATUS.PARTIAL) warnings.push('Una de las evaluaciones quedó incompleta.');
+  const formula = formulaWarning(before, after);
+  if (formula) warnings.push(formula.text);
 
   const result = {
     before: a, after: b, detailed, warnings,

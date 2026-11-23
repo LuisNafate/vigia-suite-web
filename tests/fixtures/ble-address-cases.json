@@ -1,0 +1,274 @@
+{
+  "description": "Clasificación de direcciones BLE y advertencias de comparación entre versiones de la fórmula. Compartido por vigia-suite-web (tests/fixtures/) y vigia-suite-android (app/src/test/resources/); los dos archivos deben ser idénticos.",
+  "source": "address_type = esp_ble_addr_type_t de Bluedroid (esp_bt_defs.h, arduino-esp32 3.3.12); address = BLEAddress::toString() con Bluedroid, primer byte = más significativo. Subtipos aleatorios: Bluetooth Core Vol 6 Parte B 1.3.2.",
+  "classes": {
+    "public": "Pública (estable)",
+    "static": "Aleatoria estática (estable hasta que el dispositivo la regenere)",
+    "resolvable": "Privada resoluble",
+    "non_resolvable": "Privada no resoluble",
+    "resolved_identity": "Identidad resuelta por el controlador (tipos 2 y 3); no es lo que ve un tercero",
+    "unknown": "No determinada: no suma puntos"
+  },
+  "classification": [
+    { "addressType": "public", "address": "88:8e:68:12:34:56", "expected": "public", "why": "Pública en minúsculas, como la envía el firmware." },
+    { "addressType": "public", "address": "88:8E:68:12:34:56", "expected": "public", "why": "Pública en mayúsculas." },
+    { "addressType": "public", "address": "88-8E-68-12-34-56", "expected": "public", "why": "Pública con guiones." },
+    { "addressType": "public", "address": "88:8e:68:12:34", "expected": "unknown", "why": "Pública con 5 bytes: dirección no válida." },
+    { "addressType": "random", "address": "c4:12:34:56:78:9a", "expected": "static", "why": "Primer byte 0xC4 = 11xxxxxx: aleatoria estática." },
+    { "addressType": "random", "address": "C4-12-34-56-78-9A", "expected": "static", "why": "Aleatoria estática en mayúsculas con guiones." },
+    { "addressType": "random", "address": "7a:12:34:56:78:9a", "expected": "resolvable", "why": "Primer byte 0x7A = 01xxxxxx: privada resoluble." },
+    { "addressType": "random", "address": "40:00:00:00:00:01", "expected": "resolvable", "why": "Primer byte 0x40 = 01000000." },
+    { "addressType": "random", "address": "3f:12:34:56:78:9a", "expected": "non_resolvable", "why": "Primer byte 0x3F = 00xxxxxx: privada no resoluble." },
+    { "addressType": "random", "address": "01:22:33:44:55:c0", "expected": "non_resolvable", "why": "Orden de bytes: el primer byte impreso es el más significativo; el último (0xC0) no decide." },
+    { "addressType": "random", "address": "c0:22:33:44:55:01", "expected": "static", "why": "Orden de bytes: mismo par invertido, el primer byte 0xC0 indica estática." },
+    { "addressType": "random", "address": "80:12:34:56:78:9a", "expected": "unknown", "why": "Primer byte 0x80 = 10xxxxxx: subtipo reservado." },
+    { "addressType": "random", "address": "bf:12:34:56:78:9a", "expected": "unknown", "why": "Primer byte 0xBF = 10xxxxxx: subtipo reservado." },
+    { "addressType": "random", "address": "c4123456789a", "expected": "unknown", "why": "Sin separadores: no es el formato de BLEAddress::toString()." },
+    { "addressType": "random", "address": "zz:12:34:56:78:9a", "expected": "unknown", "why": "Caracteres no hexadecimales." },
+    { "addressType": "random", "address": "", "expected": "unknown", "why": "Dirección vacía." },
+    { "addressType": "random", "address": null, "expected": "unknown", "why": "Dirección ausente." },
+    { "addressType": "public_identity", "address": "88:8e:68:12:34:56", "expected": "resolved_identity", "why": "Tipo 2: identidad pública resuelta desde una dirección privada resoluble." },
+    { "addressType": "random_identity", "address": "c4:12:34:56:78:9a", "expected": "resolved_identity", "why": "Tipo 3: identidad aleatoria resuelta; no se usan sus bits altos." },
+    { "addressType": "unknown", "address": "c4:12:34:56:78:9a", "expected": "unknown", "why": "Tipo que el firmware envía para valores fuera de 0-3." },
+    { "addressType": null, "address": "c4:12:34:56:78:9a", "expected": "unknown", "why": "Tipo ausente." },
+    { "addressType": "RANDOM", "address": "c4:12:34:56:78:9a", "expected": "unknown", "why": "El tipo distingue mayúsculas: el firmware envía «random»." },
+    { "addressType": "", "address": "88:8e:68:12:34:56", "expected": "unknown", "why": "Tipo vacío." }
+  ],
+  "formulaComparisons": [
+    {
+      "name": "v2 frente a v3 con una estática cercana y conectable: +2 comprobado",
+      "before": {
+        "scoreFormula": 2,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "expected": {
+        "kind": "confirmed",
+        "delta": 2
+      }
+    },
+    {
+      "name": "v2 frente a v3 con una identidad resuelta: −2 comprobado",
+      "before": {
+        "scoreFormula": 2,
+        "ble": [
+          { "address_type": "public_identity", "address": "88:8e:68:12:34:56", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": [
+          { "address_type": "public_identity", "address": "88:8e:68:12:34:56", "rssi": -50, "connectable": true }
+        ]
+      },
+      "expected": {
+        "kind": "confirmed",
+        "delta": -2
+      }
+    },
+    {
+      "name": "v2 frente a v3 con tipo no determinado: −2 comprobado",
+      "before": {
+        "scoreFormula": 2,
+        "ble": [
+          { "address_type": "unknown", "address": "88:8e:68:12:34:56", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": []
+      },
+      "expected": {
+        "kind": "confirmed",
+        "delta": -2
+      }
+    },
+    {
+      "name": "v2 frente a v3 sin efecto de la regla",
+      "before": {
+        "scoreFormula": 2,
+        "ble": [
+          { "address_type": "public", "address": "88:8e:68:12:34:56", "rssi": -50, "connectable": true },
+          { "address_type": "random", "address": "7a:12:34:56:78:9a", "rssi": -50, "connectable": true },
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -70, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "expected": {
+        "kind": "none",
+        "delta": 0
+      }
+    },
+    {
+      "name": "el tope de 10 puntos absorbe la diferencia",
+      "before": {
+        "scoreFormula": 2,
+        "ble": [
+          { "address_type": "public", "address": "88:8e:68:12:34:00", "rssi": -50, "connectable": true },
+          { "address_type": "public", "address": "88:8e:68:12:34:01", "rssi": -50, "connectable": true },
+          { "address_type": "public", "address": "88:8e:68:12:34:02", "rssi": -50, "connectable": true },
+          { "address_type": "public", "address": "88:8e:68:12:34:03", "rssi": -50, "connectable": true },
+          { "address_type": "public", "address": "88:8e:68:12:34:04", "rssi": -50, "connectable": true },
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true },
+          { "address_type": "random", "address": "c5:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": []
+      },
+      "expected": {
+        "kind": "none",
+        "delta": 0
+      }
+    },
+    {
+      "name": "v3 anterior a v2: se advierte sobre la v2 sin importar el orden",
+      "before": {
+        "scoreFormula": 3,
+        "ble": []
+      },
+      "after": {
+        "scoreFormula": 2,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "expected": {
+        "kind": "confirmed",
+        "delta": 2
+      }
+    },
+    {
+      "name": "sin versión frente a v3 con una estática: diferencia posible",
+      "before": {
+        "scoreFormula": null,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": []
+      },
+      "expected": {
+        "kind": "possible",
+        "delta": 2
+      }
+    },
+    {
+      "name": "sin versión frente a v3 sin efecto: sin advertencia",
+      "before": {
+        "scoreFormula": null,
+        "ble": [
+          { "address_type": "public", "address": "88:8e:68:12:34:56", "rssi": -70, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": []
+      },
+      "expected": {
+        "kind": "none",
+        "delta": 0
+      }
+    },
+    {
+      "name": "resumen histórico con BLE cercanos: posible y no comprobable",
+      "before": {
+        "legacy": true,
+        "bleNearby": 2
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": []
+      },
+      "expected": {
+        "kind": "possible",
+        "delta": null
+      }
+    },
+    {
+      "name": "resumen histórico sin BLE cercanos: sin advertencia",
+      "before": {
+        "legacy": true,
+        "bleNearby": 0
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": []
+      },
+      "expected": {
+        "kind": "none",
+        "delta": 0
+      }
+    },
+    {
+      "name": "ambas v3: sin advertencia",
+      "before": {
+        "scoreFormula": 3,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": 3,
+        "ble": [
+          { "address_type": "public_identity", "address": "88:8e:68:12:34:56", "rssi": -50, "connectable": true }
+        ]
+      },
+      "expected": {
+        "kind": "none",
+        "delta": 0
+      }
+    },
+    {
+      "name": "ambas sin versión: misma regla, sin advertencia",
+      "before": {
+        "scoreFormula": null,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": null,
+        "ble": []
+      },
+      "expected": {
+        "kind": "none",
+        "delta": 0
+      }
+    },
+    {
+      "name": "v2 frente a sin versión: ambas anteriores a v3, sin advertencia",
+      "before": {
+        "scoreFormula": 2,
+        "ble": [
+          { "address_type": "random", "address": "c4:12:34:56:78:9a", "rssi": -50, "connectable": true }
+        ]
+      },
+      "after": {
+        "scoreFormula": null,
+        "ble": [
+          { "address_type": "public_identity", "address": "88:8e:68:12:34:56", "rssi": -50, "connectable": true }
+        ]
+      },
+      "expected": {
+        "kind": "none",
+        "delta": 0
+      }
+    }
+  ]
+}
