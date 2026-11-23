@@ -156,13 +156,11 @@ function normalizeConfiguration(raw) {
   return nodes.length ? { operator: operatorOf(raw?.operator), negate: raw?.negate === true, nodes } : null;
 }
 
+/** URL de una referencia tal como la publica NVD, sólo si es http(s) absoluta, con servidor y sin espacios. */
 function safeUrl(value) {
   const raw = text(value);
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
-  } catch { return null; }
+  if (!raw || !/^https?:\/\//i.test(raw) || /\s/.test(raw)) return null;
+  try { return new URL(raw).hostname ? raw : null; } catch { return null; }
 }
 
 function normalizeAffected(raw) {
