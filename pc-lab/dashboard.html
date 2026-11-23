@@ -178,8 +178,8 @@
     </section>
 
     <section class="view" data-view="nvd" aria-labelledby="nvdTitle">
-      <div class="section-heading"><div><p class="eyebrow">CONSULTA PÚBLICA · NVD CVE API 2.0 Y CPE API 2.0</p><h2 id="nvdTitle">Vulnerabilidades documentadas</h2><p class="section-description">Consulta CVE publicadas por NVD para un producto y su versión. Son vulnerabilidades documentadas, no hallazgos del sensor: Vigía no las asocia con redes ni dispositivos observados, porque un SSID, una MAC o un tipo de autenticación no identifican el producto ni su firmware.</p></div></div>
-      <p class="analysis-note nvd-notice"><strong lang="en">This product uses the NVD API but is not endorsed or certified by the NVD.</strong> Cada consulta envía a services.nvd.nist.gov sólo el texto que escribes o el producto que eliges, nunca el inventario Wi-Fi o Bluetooth. NVD recibe tu dirección IP como en cualquier visita web; las respuestas se guardan en este navegador con la fecha de consulta.</p>
+      <div class="section-heading"><div><p class="eyebrow">CONSULTA PÚBLICA · NVD CVE API 2.0 Y CPE API 2.0</p><h2 id="nvdTitle">Vulnerabilidades documentadas</h2><p class="section-description">CVE publicadas por NVD. Son vulnerabilidades documentadas, no hallazgos del sensor.</p></div></div>
+      <p class="analysis-note nvd-notice"><strong lang="en">This product uses the NVD API but is not endorsed or certified by the NVD.</strong> Sólo se envía lo que escribes o eliges, nunca el inventario del sensor.</p>
       <div class="workspace-grid nvd-workspace">
         <article class="panel">
           <div class="panel-heading"><div><p class="overline">BÚSQUEDA</p><h2>Qué quieres consultar</h2></div></div>
@@ -198,10 +198,10 @@
         <article class="panel">
           <p class="overline">CÓMO INTERPRETARLO</p><h2>Antes de concluir</h2>
           <ul class="history-privacy">
-            <li>Una CVE describe una vulnerabilidad de un producto y unas versiones concretas. Sólo te afecta si usas ese producto en una versión incluida.</li>
-            <li>La puntuación es la CVSS publicada, con su versión y su fuente. Una CVE sin puntuación no es de riesgo bajo: todavía no tiene métrica.</li>
-            <li>Con un producto elegido, Vigía compara su versión con los rangos y condiciones de NVD; si no puede comprobarlo, lo indica.</li>
-            <li>NVD limita las consultas públicas a 5 cada 30 segundos. Vigía espera 6 segundos entre consultas y reutiliza las guardadas durante 24 horas.</li>
+            <li>Sólo te afecta si usas ese producto en una versión incluida.</li>
+            <li>«Sin puntuación CVSS» no significa riesgo bajo.</li>
+            <li>Elige un producto para comprobar su versión.</li>
+            <li>Máximo 5 consultas cada 30 s; las guardadas duran 24 h.</li>
           </ul>
         </article>
       </div>
