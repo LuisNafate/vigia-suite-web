@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { verifyPublishedFirmware } from '../scripts/verify-firmware.mjs';
+import { loadFieldFilter } from './app-source.mjs';
 
 const read = file => readFile(new URL(`../${file}`, import.meta.url), 'utf8');
 const idsIn = html => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]));
@@ -100,6 +101,20 @@ test('authLabel muestra los modos 0-16 del núcleo 3.3.12 y nunca presenta un va
   ]);
   assert.equal(authLabel(17), 'Modo 17 no reconocido');
   for (const invalid of [undefined, null, '0', '3', 0.5, -1, 256, true, NaN]) assert.equal(authLabel(invalid), 'No informada', String(invalid));
+});
+
+test('un RSSI, canal o autenticación ausente o inválido se descarta al recibir el evento', async () => {
+  const { WIFI_FIELDS, BLE_FIELDS, withValidFields } = await loadFieldFilter();
+  const valid = { type: 'wifi_ap', ssid: 'Casa', rssi: -60, channel: 6, auth: 3, bssid: 'AA:AA:AA:AA:AA:01' };
+  assert.deepEqual(withValidFields(valid, WIFI_FIELDS), valid, 'los datos del firmware no cambian');
+  for (const bad of [null, '-40', '6', true, 0.5, -200, 300]) {
+    const result = withValidFields({ ...valid, rssi: bad, channel: bad, auth: bad }, WIFI_FIELDS);
+    assert.deepEqual([result.rssi, result.channel, result.auth], [undefined, undefined, undefined], String(bad));
+    // undefined no supera ninguna comparación: la red no es abierta ni cercana.
+    assert.equal(result.rssi >= -70, false);
+  }
+  assert.equal(withValidFields({ type: 'wifi_ap', channel: 0 }, WIFI_FIELDS).channel, undefined);
+  assert.equal(withValidFields({ type: 'ble_device', rssi: null, connectable: true }, BLE_FIELDS).rssi, undefined);
 });
 
 test('el filtro «protegidas» no incluye redes sin autenticación informada', async () => {

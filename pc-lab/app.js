@@ -127,7 +127,18 @@ function macLabel(value) {
   return text.toUpperCase().match(/../g).reverse().join(':');
 }
 function signalClass(rssi) { return rssi >= -60 ? 'signal-good' : rssi >= -75 ? 'signal-mid' : 'signal-low'; }
-function proximityLabel(rssi) { return rssi >= -55 ? 'Muy cerca' : rssi >= -65 ? 'Cerca' : rssi >= -80 ? 'Media' : 'Lejana'; }
+function proximityLabel(rssi) { return rssi === undefined ? 'Desconocida' : rssi >= -55 ? 'Muy cerca' : rssi >= -65 ? 'Cerca' : rssi >= -80 ? 'Media' : 'Lejana'; }
+function dbmLabel(rssi) { return rssi === undefined ? 'RSSI no informado' : `${rssi} dBm`; }
+const byRssi = (a, b) => (b.rssi ?? -999) - (a.rssi ?? -999);
+// Mismos rangos que el parser de Android y que el historial. Un campo ausente o inválido se elimina del evento: en
+// JavaScript null o "-40" se comparan como números (null >= -70 es verdadero) y producirían alertas falsas.
+const WIFI_FIELDS = [['rssi', -127, 20], ['channel', 1, 196], ['auth', 0, 255]];
+const BLE_FIELDS = [['rssi', -127, 20]];
+function withValidFields(event, fields) {
+  const copy = { ...event };
+  for (const [name, min, max] of fields) if (!(Number.isInteger(copy[name]) && copy[name] >= min && copy[name] <= max)) delete copy[name];
+  return copy;
+}
 function addressTypeLabel(type) {
   return ({ public: 'Pública', random: 'Aleatoria', public_identity: 'Identidad pública', random_identity: 'Identidad aleatoria' })[type] || 'No informada';
 }
@@ -143,7 +154,9 @@ function renderNetworks() {
   const visible = networks.filter(network => wifiFilter === 'all' || (wifiFilter === 'open' && network.auth === 0) || (wifiFilter === 'protected' && Number.isInteger(network.auth) && network.auth !== 0) || (wifiFilter === 'nearby' && network.rssi >= -65));
   elements.counter.textContent = `${visible.length} de ${networks.length} redes`;
   elements.wifiBadge.textContent = networks.length;
-  elements.wifiSummary.textContent = networks.length ? `${openCount} abiertas · ${networks.length - openCount} protegidas` : 'Sin resultados.';
+  const protectedCount = networks.filter(network => Number.isInteger(network.auth) && network.auth !== 0).length;
+  const unknownCount = networks.length - openCount - protectedCount;
+  elements.wifiSummary.textContent = networks.length ? `${openCount} abiertas · ${protectedCount} protegidas${unknownCount ? ` · ${unknownCount} sin autenticación informada` : ''}` : 'Sin resultados.';
   if (elements.hiddenResult) {
     const hidden = networks.filter(network => !network.ssid).length;
     elements.hiddenResult.textContent = networks.length ? `${hidden} AP sin nombre anunciado en la muestra actual.` : 'Ejecuta primero Wi-Fi Scan.';
@@ -157,9 +170,9 @@ function renderNetworks() {
     elements.table.innerHTML = '<tr class="empty-row"><td colspan="5">No hay redes que coincidan con este filtro.</td></tr>';
     renderModuleAdvice(); return;
   }
-  elements.table.innerHTML = [...visible].sort((a, b) => b.rssi - a.rssi).map(network => `<tr>
-    <td>${escapeHtml(network.ssid || '[oculta]')}</td><td class="${signalClass(network.rssi)}">${network.rssi} dBm</td>
-    <td>${network.channel}</td><td><span class="security-tag ${network.auth === 0 ? 'open' : ''}">${authLabel(network.auth)}</span></td>
+  elements.table.innerHTML = [...visible].sort(byRssi).map(network => `<tr>
+    <td>${escapeHtml(network.ssid || '[oculta]')}</td><td class="${signalClass(network.rssi)}">${dbmLabel(network.rssi)}</td>
+    <td>${network.channel ?? '—'}</td><td><span class="security-tag ${network.auth === 0 ? 'open' : ''}">${authLabel(network.auth)}</span></td>
     <td>${escapeHtml(network.bssid)}</td></tr>`).join('');
   renderModuleAdvice();
 }
@@ -184,8 +197,8 @@ function renderBleDevices() {
     elements.bleTable.innerHTML = '<tr class="empty-row"><td colspan="7">No hay dispositivos que coincidan con este filtro.</td></tr>';
     renderModuleAdvice(); return;
   }
-  elements.bleTable.innerHTML = [...visible].sort((a, b) => b.rssi - a.rssi).map(device => `<tr>
-    <td>${escapeHtml(device.name || '[sin nombre]')}</td><td class="${signalClass(device.rssi)}">${device.rssi} dBm</td>
+  elements.bleTable.innerHTML = [...visible].sort(byRssi).map(device => `<tr>
+    <td>${escapeHtml(device.name || '[sin nombre]')}</td><td class="${signalClass(device.rssi)}">${dbmLabel(device.rssi)}</td>
     <td><span class="proximity-tag">${proximityLabel(device.rssi)}</span></td><td>${escapeHtml(device.address)}</td>
     <td>${escapeHtml(addressTypeLabel(device.address_type))}</td><td>${device.connectable ? 'Sí' : 'No'}</td>
     <td><strong>${escapeHtml(manufacturerLabel(device.manufacturer_id))}</strong><small class="cell-detail">${escapeHtml(device.services || 'Sin servicios anunciados')}</small></td></tr>`).join('');
@@ -196,7 +209,7 @@ function inspectHiddenAps() {
   if (!networks.length) { elements.hiddenResult.textContent = 'No hay muestra. Ejecuta Wi-Fi Scan.'; return; }
   const hidden = networks.filter(item => !item.ssid);
   if (!hidden.length) { elements.hiddenResult.textContent = 'No se observaron AP con SSID omitido en esta muestra.'; return; }
-  const channels = [...new Set(hidden.map(item => item.channel))].sort((a, b) => a - b);
+  const channels = [...new Set(hidden.map(item => item.channel ?? 'no informado'))].sort((a, b) => a - b);
   elements.hiddenResult.textContent = `${hidden.length} AP oculto(s), canales ${channels.join(', ')}. Ocultar el SSID no reemplaza WPA2/WPA3 y esta herramienta no intenta descubrir el nombre.`;
 }
 
@@ -369,7 +382,7 @@ function handleLine(rawLine) {
       elements.status.textContent = `Memoria libre: ${event.heap_free.toLocaleString('es-MX')} bytes · Activo: ${Math.round(event.uptime_ms / 1000)} s`;
     }
     if (event.type === 'wifi_scan_started') { networks = []; wifiTruncated = null; renderNetworks(); elements.status.textContent = 'Analizando redes Wi-Fi…'; }
-    if (event.type === 'wifi_ap') { networks.push(event); renderNetworks(); }
+    if (event.type === 'wifi_ap') { networks.push(withValidFields(event, WIFI_FIELDS)); renderNetworks(); }
     if (event.type === 'wifi_scan_finished') { wifiTruncated = typeof event.truncated === 'boolean' ? event.truncated : null; elements.status.textContent = `Wi-Fi finalizado: ${event.count} redes detectadas.`; renderAnalysis(); }
     if (event.type === 'deauth_monitor_started') {
       elements.deauthResult.textContent = `Monitor pasivo activo durante ${event.duration_s || 8} segundos…`;
@@ -390,8 +403,9 @@ function handleLine(rawLine) {
     if (event.type === 'ble_scan_started') { bleDevices = []; bleScanFailed = false; bleTruncated = null; renderBleDevices(); elements.status.textContent = 'Analizando Bluetooth LE…'; }
     if (event.type === 'ble_status') elements.status.textContent = event.ready ? 'Bluetooth LE disponible y listo.' : 'Bluetooth LE no pudo inicializarse.';
     if (event.type === 'ble_device') {
-      const existing = bleDevices.findIndex(device => device.address === event.address);
-      if (existing >= 0) bleDevices[existing] = event; else bleDevices.push(event);
+      const observed = withValidFields(event, BLE_FIELDS);
+      const existing = bleDevices.findIndex(device => device.address === observed.address);
+      if (existing >= 0) bleDevices[existing] = observed; else bleDevices.push(observed);
       renderBleDevices();
     }
     if (event.type === 'ble_scan_finished') {
