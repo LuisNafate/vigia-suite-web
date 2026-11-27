@@ -14,6 +14,7 @@
     <img alt="Web Serial" src="https://img.shields.io/badge/WEB%20SERIAL-USB-1679A7?style=flat-square&logo=usb&logoColor=white">
     <img alt="ESP32" src="https://img.shields.io/badge/ESP32-NODEMCU-E7352C?style=flat-square&logo=espressif&logoColor=white">
     <img alt="Protocolo VIGIA 2" src="https://img.shields.io/badge/PROTOCOLO-VIGIA%2F2-4B5563?style=flat-square">
+    <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/LICENCIA-MIT-F4C430?style=flat-square"></a>
     <img alt="Último commit" src="https://img.shields.io/github/last-commit/LuisNafate/vigia-suite-web?style=flat-square&logo=git&logoColor=white">
   </p>
 </div>
@@ -157,3 +158,7 @@ Selecciona **ESP32 Dev Module**, **Partition Scheme: Huge APP (3MB No OTA/1MB SP
 ## Uso responsable
 
 Las funciones de descubrimiento deben utilizarse exclusivamente en redes, espacios y dispositivos propios o con autorización explícita. El proyecto realiza inventario y diagnóstico defensivo; no intenta autenticarse, interferir ni capturar contenido de terceros.
+
+## Licencia
+
+Este proyecto se distribuye bajo la [Licencia MIT](LICENSE). Copyright © 2026 Luis Nafate.
