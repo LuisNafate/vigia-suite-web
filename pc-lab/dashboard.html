@@ -24,6 +24,8 @@
       <button class="tab" data-view-target="analisis"><strong>Resumen</strong><small>Riesgos y acciones</small></button>
       <button class="tab" data-view-target="wifi"><strong>Wi-Fi Recon <span id="wifiBadge">0</span></strong><small>Inventario y defensa</small></button>
       <button class="tab" data-view-target="bluetooth"><strong>Bluetooth <span id="bleBadge">0</span></strong><small>Privacidad y cercanía</small></button>
+      <button class="tab" data-view-target="historial"><strong>Historial</strong><small>Evaluaciones y comparación</small></button>
+      <button class="tab" data-view-target="nvd"><strong>Vulnerabilidades</strong><small>CVE y productos en NVD</small></button>
       <button class="tab" data-view-target="diagnostico"><strong>Sistema</strong><small>Sensor y firmware</small></button>
       <button class="tab" data-view-target="instalar"><strong>Preparar ESP32</strong><small>Instalar o actualizar firmware</small></button>
       <div class="side-note"><span>VIGIA/2</span><strong>Procesamiento local</strong><small>Los datos permanecen en este dispositivo.</small></div>
@@ -88,7 +90,7 @@
       </div>
       <article class="panel history-panel">
         <div class="panel-heading"><div><p class="overline">INFORMES Y REGISTRO</p><h2>Guarda o compara resultados</h2></div><div class="button-row"><button class="secondary" id="exportJsonButton" disabled>Informe JSON</button><button class="secondary" id="exportCsvButton" disabled>Inventario CSV</button><span class="counter" id="historyCounter">0 sesiones</span><button class="ghost" id="clearHistoryButton" disabled>Limpiar</button></div></div>
-        <p class="history-help">Se conserva únicamente en este navegador y registra resúmenes, no tráfico ni contraseñas.</p>
+        <p class="history-help">Se conserva únicamente en este navegador: el resumen y las redes y dispositivos observados en cada evaluación. No registra tráfico ni contraseñas. <button class="link-button" data-view-target="historial">Abrir el historial completo</button></p>
         <div id="historyList" class="history-list"><p class="empty-copy">Aún no hay análisis guardados.</p></div>
       </article>
       <p class="analysis-note">El resultado describe exposición observable; no demuestra por sí mismo una vulnerabilidad explotable. Valida los hallazgos con el responsable de cada red.</p>
@@ -134,7 +136,7 @@
         <article class="panel ble-stat"><span>VISIBLES</span><strong id="bleVisible">0</strong><small>anuncios únicos</small></article>
         <article class="panel ble-stat"><span>CERCANOS</span><strong id="bleNearby">0</strong><small>señal ≥ −65 dBm</small></article>
         <article class="panel ble-stat"><span>CONECTABLES</span><strong id="bleConnectable">0</strong><small>aceptan conexión</small></article>
-        <article class="panel ble-stat"><span>DIRECCIÓN ALEATORIA</span><strong id="blePrivate">0</strong><small>protección de privacidad</small></article>
+        <article class="panel ble-stat"><span>DIRECCIÓN PRIVADA</span><strong id="blePrivate">0</strong><small>resoluble, no resoluble o identidad resuelta</small></article>
       </div>
       <article class="panel table-panel">
         <div class="panel-heading"><p id="bleSummary">Sin resultados.</p><span class="counter" id="bleCounter">0 resultados</span></div>
@@ -142,6 +144,88 @@
       </article>
       <article class="panel module-analysis"><p class="overline">ANÁLISIS BLUETOOTH</p><h2>Privacidad y superficie observable</h2><div id="bleAdvice" class="finding-list"><p class="empty-copy">Escanea para recibir recomendaciones contextualizadas.</p></div></article>
       <p class="analysis-note">El inventario solo lee anuncios BLE públicos. No se conecta, empareja ni extrae información privada de los dispositivos.</p>
+    </section>
+
+    <section class="view" data-view="historial" aria-labelledby="historyTitle">
+      <div class="section-heading"><div><p class="eyebrow">REGISTRO LOCAL · ESTE NAVEGADOR</p><h2 id="historyTitle">Historial de evaluaciones</h2><p class="section-description">Abre una evaluación para revisar todas sus observaciones o marca dos para ver qué cambió entre ellas.</p></div></div>
+      <p class="analysis-note" id="historyStatus" role="status">Abriendo historial…</p>
+      <div class="workspace-grid history-workspace">
+        <article class="panel">
+          <div class="panel-heading"><div><p class="overline">EVALUACIONES</p><h2>Registro</h2></div><span class="counter" id="historyViewCounter">0 evaluaciones</span></div>
+          <p class="history-help">Marca dos evaluaciones para compararlas. La más antigua se usa como referencia.</p>
+          <div class="button-row"><button class="primary" id="historyCompareButton" disabled>Comparar seleccionadas</button></div>
+          <div id="historyViewList" class="history-list history-full-list"><p class="empty-copy">Cargando…</p></div>
+        </article>
+        <article class="panel">
+          <p class="overline">PRIVACIDAD Y CONSERVACIÓN</p><h2>Qué se guarda</h2>
+          <ul class="history-privacy">
+            <li>Fecha, puntuación, nivel y estado de cada evaluación.</li>
+            <li>Identidad del sensor: placa, chip, MAC, firmware y protocolo, si el sensor los informó.</li>
+            <li>Por red Wi-Fi: SSID, BSSID, canal, RSSI y autenticación anunciada.</li>
+            <li>Por dispositivo BLE: nombre, dirección, tipo de dirección, RSSI, conectividad, fabricante y servicios anunciados.</li>
+            <li>No se guardan contraseñas, tráfico ni la consola serial, y nada se envía a servidores externos.</li>
+          </ul>
+          <label class="fw-select-label" for="historyMaxCount">Conservar como máximo</label>
+          <select id="historyMaxCount"></select>
+          <label class="fw-select-label" for="historyMaxAge">Eliminar evaluaciones con más de</label>
+          <select id="historyMaxAge"></select>
+          <div class="button-row history-actions"><button class="secondary" id="historyRetentionApply">Aplicar política</button><button class="ghost" id="historyDeleteAll" disabled>Eliminar todo el historial</button></div>
+          <output id="historyRetentionResult"></output>
+        </article>
+      </div>
+      <article class="panel history-detail" id="historyDetail" hidden></article>
+      <article class="panel history-detail" id="historyComparison" hidden></article>
+    </section>
+
+    <section class="view" data-view="nvd" aria-labelledby="nvdTitle">
+      <div class="section-heading"><div><p class="eyebrow">CONSULTA PÚBLICA · NVD CVE API 2.0 Y CPE API 2.0</p><h2 id="nvdTitle">Vulnerabilidades documentadas</h2><p class="section-description">CVE publicadas por NVD. Son vulnerabilidades documentadas, no hallazgos del sensor.</p></div></div>
+      <p class="analysis-note nvd-notice"><strong lang="en">This product uses the NVD API but is not endorsed or certified by the NVD.</strong> Sólo se envía lo que escribes o eliges, nunca el inventario del sensor.</p>
+      <div class="workspace-grid nvd-workspace">
+        <article class="panel">
+          <div class="panel-heading"><div><p class="overline">BÚSQUEDA</p><h2>Qué quieres consultar</h2></div></div>
+          <div class="filter-bar" role="group" aria-label="Tipo de búsqueda"><button class="filter active" type="button" data-nvd-mode="cve">Identificador CVE</button><button class="filter" type="button" data-nvd-mode="keyword">Palabras clave</button><button class="filter" type="button" data-nvd-mode="cpe">Producto (CPE)</button></div>
+          <form id="nvdForm" class="nvd-form" novalidate>
+            <label class="fw-select-label" for="nvdQuery" id="nvdQueryLabel">Identificador CVE</label>
+            <input id="nvdQuery" type="search" autocomplete="off" spellcheck="false" maxlength="120" placeholder="CVE-2021-44228">
+            <p class="history-help" id="nvdHint">Escribe un identificador con la forma CVE-AAAA-NNNN.</p>
+            <label class="nvd-option" id="nvdExactOption" hidden><input type="checkbox" id="nvdExact"> Frase exacta</label>
+            <label class="nvd-option" id="nvdRejectedOption" hidden><input type="checkbox" id="nvdNoRejected"> Excluir CVE rechazadas</label>
+            <div class="button-row"><button class="primary" type="submit" id="nvdSearch">Consultar NVD</button><button class="ghost" type="button" id="nvdRefresh" disabled>Actualizar desde NVD</button></div>
+          </form>
+          <p class="nvd-status" id="nvdStatus" role="status" aria-live="polite">Sin consultas todavía.</p>
+          <p class="nvd-fetched" id="nvdFetched"></p>
+        </article>
+        <article class="panel">
+          <p class="overline">CÓMO INTERPRETARLO</p><h2>Antes de concluir</h2>
+          <ul class="history-privacy">
+            <li>Sólo te afecta si usas ese producto en una versión incluida.</li>
+            <li>«Sin puntuación CVSS» no significa riesgo bajo.</li>
+            <li>Elige un producto para comprobar su versión.</li>
+            <li>Máximo 5 consultas cada 30 s; las guardadas duran 24 h.</li>
+          </ul>
+        </article>
+      </div>
+      <article class="panel nvd-panel" id="nvdCpePanel" hidden>
+        <div class="panel-heading"><div><p class="overline">PRODUCTOS DEL DICCIONARIO CPE</p><h2>Elige el producto y la versión</h2></div><span class="counter" id="nvdCpeCounter"></span></div>
+        <p class="history-help">Selecciona la entrada exacta de tu producto. Las entradas obsoletas indican cuál las reemplaza.</p>
+        <div class="table-wrap"><table><thead><tr><th>PRODUCTO</th><th>VERSIÓN</th><th>NOMBRE CPE</th><th></th></tr></thead><tbody id="nvdCpeTable"></tbody></table></div>
+        <div class="button-row"><button class="secondary" type="button" id="nvdCpeMore" hidden>Cargar más productos</button></div>
+      </article>
+      <article class="panel nvd-panel" id="nvdResultsPanel" hidden>
+        <div class="panel-heading"><div><p class="overline">RESULTADOS</p><h2 id="nvdResultsTitle">Vulnerabilidades</h2></div><span class="counter" id="nvdCounter"></span></div>
+        <p class="history-help" id="nvdSelection"></p>
+        <div class="nvd-filters">
+          <label>Severidad<select id="nvdFilterSeverity"><option value="all">Todas</option><option value="CRITICAL">Crítica</option><option value="HIGH">Alta</option><option value="MEDIUM">Media</option><option value="LOW">Baja</option><option value="NONE">Ninguna (CVSS 0)</option><option value="unscored">Sin puntuación CVSS</option></select></label>
+          <label>Versión CVSS<select id="nvdFilterVersion"><option value="all">Cualquiera</option><option value="4.0">4.0</option><option value="3.1">3.1</option><option value="3.0">3.0</option><option value="2.0">2.0</option><option value="none">Sin métricas</option></select></label>
+          <label>Estado<select id="nvdFilterStatus"><option value="all">Todos</option><option value="active">No rechazadas</option><option value="pending">Pendientes o en análisis</option><option value="rejected">Rechazadas</option></select></label>
+          <label>Ordenar<select id="nvdSort"><option value="nvd">Orden de NVD</option><option value="published">Publicación más reciente</option><option value="modified">Modificación más reciente</option><option value="score">Puntuación más alta</option></select></label>
+          <label class="nvd-filter-text">Filtrar texto<input id="nvdFilterText" type="search" autocomplete="off" placeholder="Identificador o descripción"></label>
+        </div>
+        <p class="history-help">Los filtros se aplican a los resultados ya cargados en esta página.</p>
+        <div class="table-wrap nvd-table"><table><thead><tr><th>CVE</th><th>SEVERIDAD</th><th>ESTADO</th><th>PUBLICADA</th><th>MODIFICADA</th><th id="nvdApplicabilityHead" hidden>APLICABILIDAD</th></tr></thead><tbody id="nvdTable"></tbody></table></div>
+        <div class="button-row"><button class="secondary" type="button" id="nvdMore" hidden>Cargar más resultados</button></div>
+      </article>
+      <article class="panel history-detail nvd-detail" id="nvdDetail" hidden></article>
     </section>
 
     <section class="view" data-view="diagnostico">
@@ -253,7 +337,10 @@
 
     <footer><span>Vigía Suite MVP 0.8</span><span>Recon pasivo y análisis defensivo en entornos autorizados</span><a href="https://github.com/LuisNafate/vigia-suite-web">Código Web ↗</a><a href="https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta">Android APK ↗</a></footer>
   </main>
+  <script src="ble-address.js"></script>
   <script src="app.js"></script>
   <script type="module" src="installer.js"></script>
+  <script type="module" src="history.js"></script>
+  <script type="module" src="nvd.js"></script>
 </body>
 </html>

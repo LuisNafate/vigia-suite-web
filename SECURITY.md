@@ -2,6 +2,8 @@
 
 Vigía Suite está diseñada para observación defensiva en redes y dispositivos propios o con autorización explícita.
 
+La matriz de aplicabilidad, controles técnicos y evidencias de prueba se encuentra en [docs/SECURITY-CONTROLS.md](docs/SECURITY-CONTROLS.md).
+
 ## Datos que no deben publicarse
 
 - Credenciales, tokens, archivos `.env` o configuraciones Wi-Fi privadas.

@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { verifyPublishedFirmware } from '../scripts/verify-firmware.mjs';
+import { loadFieldFilter } from './app-source.mjs';
 
 const read = file => readFile(new URL(`../${file}`, import.meta.url), 'utf8');
 const idsIn = html => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]));
 const selectorsIn = source => [...source.matchAll(/\$\('#([A-Za-z0-9_-]+)'\)/g)].map(match => match[1]);
 
-test('dashboard.html contiene todos los elementos que usan app.js e installer.js', async () => {
+test('dashboard.html contiene todos los elementos que usan app.js, installer.js, history.js y nvd.js', async () => {
   const ids = idsIn(await read('pc-lab/dashboard.html'));
-  for (const file of ['pc-lab/app.js', 'pc-lab/installer.js']) {
+  for (const file of ['pc-lab/app.js', 'pc-lab/installer.js', 'pc-lab/history.js', 'pc-lab/nvd.js']) {
     const missing = selectorsIn(await read(file)).filter(id => !ids.has(id));
     assert.deepEqual(missing, [], `${file} referencia ids inexistentes`);
   }
@@ -87,4 +88,79 @@ test('macLabel muestra la MAC real tanto del firmware nuevo como del antiguo', a
   // Valores vacios o inesperados se dejan pasar sin inventar nada.
   assert.equal(macLabel(undefined), '');
   assert.equal(macLabel('no-aplica'), 'no-aplica');
+});
+
+test('authLabel muestra los modos 0-16 del núcleo 3.3.12 y nunca presenta un valor inválido como abierta', async () => {
+  const app = await read('pc-lab/app.js');
+  const table = app.match(/const AUTH_LABELS = \[[\s\S]*?\];/)[0];
+  const source = app.match(/function authLabel\(value\) \{[\s\S]*?^\}/m)[0];
+  const authLabel = new Function(`${table}; ${source}; return authLabel;`)();
+  assert.deepEqual(Array.from({ length: 17 }, (_, mode) => authLabel(mode)), [
+    'Abierta', 'WEP', 'WPA-PSK', 'WPA2-PSK', 'WPA/WPA2', 'WPA2 Enterprise', 'WPA3-PSK', 'WPA2/WPA3', 'WAPI',
+    'OWE', 'WPA3 Enterprise 192 bits', 'WPA3-PSK (EXT)', 'WPA3-PSK mixto (EXT)', 'DPP', 'WPA3 Enterprise', 'WPA2/WPA3 Enterprise', 'WPA Enterprise',
+  ]);
+  assert.equal(authLabel(17), 'Modo 17 no reconocido');
+  for (const invalid of [undefined, null, '0', '3', 0.5, -1, 256, true, NaN]) assert.equal(authLabel(invalid), 'No informada', String(invalid));
+});
+
+test('un RSSI, canal o autenticación ausente o inválido se descarta al recibir el evento', async () => {
+  const { WIFI_FIELDS, BLE_FIELDS, withValidFields } = await loadFieldFilter();
+  const valid = { type: 'wifi_ap', ssid: 'Casa', rssi: -60, channel: 6, auth: 3, bssid: 'AA:AA:AA:AA:AA:01' };
+  assert.deepEqual(withValidFields(valid, WIFI_FIELDS), valid, 'los datos del firmware no cambian');
+  for (const bad of [null, '-40', '6', true, 0.5, -200, 300]) {
+    const result = withValidFields({ ...valid, rssi: bad, channel: bad, auth: bad }, WIFI_FIELDS);
+    assert.deepEqual([result.rssi, result.channel, result.auth], [undefined, undefined, undefined], String(bad));
+    // undefined no supera ninguna comparación: la red no es abierta ni cercana.
+    assert.equal(result.rssi >= -70, false);
+  }
+  assert.equal(withValidFields({ type: 'wifi_ap', channel: 0 }, WIFI_FIELDS).channel, undefined);
+  assert.equal(withValidFields({ type: 'ble_device', rssi: null, connectable: true }, BLE_FIELDS).rssi, undefined);
+});
+
+test('el filtro «protegidas» no incluye redes sin autenticación informada', async () => {
+  const app = await read('pc-lab/app.js');
+  assert.match(app, /wifiFilter === 'protected' && Number\.isInteger\(network\.auth\) && network\.auth !== 0/);
+});
+
+test('history.js se carga como módulo después de app.js y el service worker lo incluye', async () => {
+  const html = await read('pc-lab/dashboard.html');
+  assert.match(html, /<script type="module" src="history.js"><\/script>/);
+  assert.ok(html.indexOf('src="app.js"') < html.indexOf('src="history.js"'));
+  assert.match(html, /data-view="historial"/);
+  assert.match(html, /data-view-target="historial"/);
+  const sw = await read('pc-lab/service-worker.js');
+  for (const file of ['/history.js', '/history-core.js', '/history-store.js']) assert.ok(sw.includes(`'${file}'`), `${file} falta en el service worker`);
+  const app = await read('pc-lab/app.js');
+  assert.match(app, /labels: Object\.freeze\(\{ authLabel, addressTypeLabel, manufacturerLabel \}\)/);
+});
+
+test('el historial no envía datos fuera del navegador', async () => {
+  for (const file of ['pc-lab/history.js', 'pc-lab/history-core.js', 'pc-lab/history-store.js']) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /fetch\(|XMLHttpRequest|sendBeacon|WebSocket|nvd\.nist/i, `${file} no debe hacer peticiones de red`);
+  }
+});
+
+test('la consulta NVD no lee el inventario del sensor ni el historial, y sólo contacta con NVD', async () => {
+  for (const file of ['pc-lab/nvd.js', 'pc-lab/nvd-core.js', 'pc-lab/nvd-client.js', 'pc-lab/nvd-store.js']) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /VigiaApp|VigiaHistory|history-store|history-core|wifiNetworks|bleDevices|navigator\.serial|localStorage/, `${file} no debe usar datos del sensor ni del historial`);
+    assert.doesNotMatch(source, /apiKey|XMLHttpRequest|sendBeacon|WebSocket/, `${file} no debe usar claves ni otros canales`);
+    for (const url of source.match(/https?:\/\/[^\s'"`)]+/g) ?? []) assert.match(url, /^https:\/\/(services\.)?nvd\.nist\.gov\//, `${file}: ${url}`);
+  }
+  const sw = await read('pc-lab/service-worker.js');
+  assert.match(sw, /url\.origin !== self\.location\.origin\) return;/, 'el service worker no intercepta NVD');
+  for (const file of ['/nvd.js', '/nvd-core.js', '/nvd-client.js', '/nvd-store.js']) assert.ok(sw.includes(`'${file}'`), `${file} en la caché de la aplicación`);
+});
+
+test('la puntuación de app.js no cambió con el historial', async () => {
+  const app = await read('pc-lab/app.js');
+  const source = app.match(/let score = 0;[\s\S]*?score = Math\.min\(100, score\);/)[0];
+  // busiest es { channel, count } (busiestChannel); el umbral de 12 redes sigue siendo el de la fórmula.
+  assert.match(app, /const CONGESTION_SCORE_NETWORKS = 12;/);
+  const compute = new Function('open', 'strongOpen', 'weak', 'total', 'busiest', 'stableNearbyBle', `const CONGESTION_SCORE_NETWORKS = 12; ${source}; return score;`);
+  const many = n => Array.from({ length: n }, () => ({ connectable: true }));
+  assert.equal(compute(many(2), many(1), many(1), 8, { channel: 6, count: 3 }, many(0)), 2 * 3 + 5 + 12 + 10);
+  assert.equal(compute(many(20), many(10), many(5), 30, { channel: 6, count: 12 }, many(9)), 100);
+  assert.equal(compute([], [], [], 4, { channel: 1, count: 13 }, many(3)), 5 + 6);
 });
