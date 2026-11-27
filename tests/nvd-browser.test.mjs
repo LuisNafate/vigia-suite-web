@@ -13,12 +13,16 @@ const cpeResponse = { resultsPerPage: 2, startIndex: 0, totalResults: 2, format:
   { cpe: { deprecated: false, cpeName: `cpe:2.3:a:apache:log4j:2.15.0${ANY}`, cpeNameId: 'X2', titles: [{ title: 'Apache Software Foundation Log4j 2.15.0', lang: 'en' }] } },
 ] };
 const B = 'https://services.nvd.nist.gov/rest/json';
+const xssResponse = structuredClone(fixture.responses['cve-no-metrics']);
+xssResponse.vulnerabilities[0].cve.descriptions[0].value = '<img src=x onerror="window.__xss=true">Descripción NVD';
+xssResponse.vulnerabilities[0].cve.references.push({ url: 'javascript:window.__xss=true', source: 'prueba', tags: [] });
 const routes = {
   [`${B}/cves/2.0?cveIds=CVE-2021-44228`]: fixture.responses['cve-log4j'],
   [`${B}/cpes/2.0?keywordSearch=apache%20log4j&resultsPerPage=20&startIndex=0`]: cpeResponse,
   [`${B}/cves/2.0?cpeName=cpe:2.3:a:apache:log4j:2.14.1:%2A:%2A:%2A:%2A:%2A:%2A:%2A&isVulnerable&resultsPerPage=20&startIndex=0`]: fixture.responses['cve-log4j'],
   [`${B}/cves/2.0?keywordSearch=sin%20resultados&resultsPerPage=20&startIndex=0`]: fixture.responses['cve-empty'],
   [`${B}/cves/2.0?keywordSearch=sin%20metricas&resultsPerPage=20&startIndex=0`]: fixture.responses['cve-no-metrics'],
+  [`${B}/cves/2.0?keywordSearch=xss%20prueba&resultsPerPage=20&startIndex=0`]: xssResponse,
 };
 
 // Sustituye fetch sólo para NVD. window.__nvdOffline simula la pérdida de red.
@@ -88,7 +92,16 @@ test('vista NVD: CVE, detalle, producto CPE, aplicabilidad, sin resultados, cach
     assert.match(row, /Pendiente de análisis/);
     assert.doesNotMatch(row, /Baja/);
 
-    // 6. Una MAC no se envía y un CVE mal escrito no llega a NVD.
+    // 6. Contenido hostil de NVD se presenta como texto y las URL con otros protocolos se descartan.
+    await page.evaluate(`window.__xss = false; document.querySelector('#nvdQuery').value = 'xss prueba'; document.querySelector('#nvdSearch').click()`);
+    await page.waitFor(`document.querySelectorAll('#nvdTable [data-nvd-open]').length === 1`, 20000);
+    await page.evaluate(`document.querySelector('#nvdTable [data-nvd-open]').click()`);
+    await page.waitFor(`!document.querySelector('#nvdDetail').hidden`);
+    assert.equal(await page.evaluate('window.__xss'), false);
+    assert.equal(await page.evaluate(`document.querySelectorAll('#nvdDetail img, #nvdDetail [onerror], #nvdDetail a[href^="javascript:"]').length`), 0);
+    assert.match(await page.evaluate(text('#nvdDetail')), /<img src=x onerror=/, 'la descripción se conserva como texto visible');
+
+    // 7. Una MAC no se envía y un CVE mal escrito no llega a NVD.
     const before = await page.evaluate('window.__nvdRequests.length');
     await page.evaluate(`document.querySelector('#nvdQuery').value = 'router 04:B2:47:82:60:1C'; document.querySelector('#nvdSearch').click()`);
     await page.waitFor(`/No se envían direcciones MAC/.test(${text('#nvdStatus')})`);
@@ -96,7 +109,7 @@ test('vista NVD: CVE, detalle, producto CPE, aplicabilidad, sin resultados, cach
     await page.waitFor(`/CVE-AAAA-NNNN/.test(${text('#nvdStatus')})`);
     assert.equal(await page.evaluate('window.__nvdRequests.length'), before);
 
-    // 7. Sin conexión: «Actualizar desde NVD» conserva los datos guardados y lo indica.
+    // 8. Sin conexión: «Actualizar desde NVD» conserva los datos guardados y lo indica.
     await page.evaluate(`document.querySelector('#nvdQuery').value = 'CVE-2021-44228'; document.querySelector('#nvdSearch').click()`);
     await page.waitFor(`!document.querySelector('#nvdDetail').hidden && /Datos guardados/.test(${text('#nvdFetched')})`, 20000);
     await page.evaluate(`window.__nvdOffline = true; document.querySelector('#nvdRefresh').click()`);

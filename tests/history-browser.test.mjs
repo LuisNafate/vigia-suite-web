@@ -54,6 +54,19 @@ localStorage.setItem('vigia-suite-analysis-history-v1', ${JSON.stringify(JSON.st
 location.replace('/dashboard.html');
 </script>`;
 
+const XSS_PAYLOAD = '<img src=x onerror="window.__xss=true">';
+const XSS_HISTORY = [
+  { createdAt: '2026-11-27T12:00:00.000Z', score: 20, level: 'BAJO', wifi: { total: 2, open: 1 }, bluetooth: { total: 1, nearby: 0 } },
+  { createdAt: '2026-11-27T12:00:00.000Z', score: XSS_PAYLOAD, level: 'BAJO', wifi: { total: 2, open: 1 }, bluetooth: { total: 1, nearby: 0 } },
+  { createdAt: '2026-11-27T12:00:00.000Z', score: 20, level: XSS_PAYLOAD, wifi: { total: 2, open: 1 }, bluetooth: { total: 1, nearby: 0 } },
+  { createdAt: '2026-11-27T12:00:00.000Z', score: 20, level: 'BAJO', wifi: { total: XSS_PAYLOAD, open: 1 }, bluetooth: { total: 1, nearby: 0 } },
+];
+const XSS_SEED_PAGE = `<!doctype html><meta charset="utf-8"><script>
+window.__xss = false;
+localStorage.setItem('vigia-suite-analysis-history-v1', ${JSON.stringify(JSON.stringify(XSS_HISTORY))});
+location.replace('/dashboard.html');
+</script>`;
+
 test('history-store guarda, asocia, consulta y elimina evaluaciones en IndexedDB', { skip, timeout: 60000 }, async () => {
   await withBrowser({ '/__store.html': STORE_PAGE }, async page => {
     await page.goto('/__store.html');
@@ -76,6 +89,18 @@ test('history-store guarda, asocia, consulta y elimina evaluaciones en IndexedDB
   });
 });
 
+test('el respaldo de localStorage rechaza cargas XSS y las dibuja sin interpretar HTML', { skip, timeout: 60000 }, async () => {
+  await withBrowser({ '/__xss-seed.html': XSS_SEED_PAGE }, async page => {
+    await page.addInitScript(`Object.defineProperty(window, 'indexedDB', { configurable: true, value: undefined }); window.__xss = false;`);
+    await page.goto('/__xss-seed.html');
+    await page.waitFor(`document.querySelector('#historyCounter')?.textContent === '1 sesión'`);
+    assert.equal(await page.evaluate('window.__xss'), false);
+    assert.equal(await page.evaluate(`document.querySelectorAll('#historyList img, #historyList script, #historyList [onerror]').length`), 0);
+    assert.match(await page.evaluate(`document.querySelector('#historyList').textContent`), /20\/100 · BAJO/);
+    assert.doesNotMatch(await page.evaluate(`document.querySelector('#historyList').textContent`), /onerror|<img/);
+  });
+});
+
 test('el dashboard migra localStorage, guarda evaluaciones completas, compara y elimina', { skip, timeout: 90000 }, async () => {
   await withBrowser({ '/__seed.html': SEED_PAGE }, async page => {
     await page.goto('/__seed.html');
@@ -93,14 +118,15 @@ test('el dashboard migra localStorage, guarda evaluaciones completas, compara y 
 
     // Guardar dos evaluaciones con el mismo formato que produce app.js.
     await page.evaluate(`(async () => {
+      window.__xss = false;
       const base = { schema: 'vigia-suite-report/1', level: 'BAJO', wifi: { truncated: false }, bluetooth: { scanFailed: false, truncated: false } };
       await window.VigiaHistory.saveReport({ ...base, createdAt: '2026-11-18T10:00:00.000Z', score: 10,
         wifiNetworks: [{ ssid: 'Casa', bssid: 'AA:AA:AA:AA:AA:01', channel: 1, rssi: -50, auth: 3 }, { ssid: 'Taller', bssid: 'AA:AA:AA:AA:AA:02', channel: 6, rssi: -70, auth: 3 }],
         bleDevices: [{ name: '', address: 'aa:bb:cc:dd:ee:ff', address_type: 'random', rssi: -60, connectable: false, manufacturer_id: -1, services: '' }] },
         { status: 'complete', sensor: { board: 'nodemcu-esp32s', chip: 'ESP32', mac: '04:B2:47:82:60:1C', firmware: null, protocol: 2 } });
       await window.VigiaHistory.saveReport({ ...base, createdAt: '2026-11-19T10:00:00.000Z', score: 45, level: 'MEDIO',
-        wifiNetworks: [{ ssid: 'Casa', bssid: 'AA:AA:AA:AA:AA:01', channel: 11, rssi: -52, auth: 0 }, { ssid: '<b>Nueva</b>', bssid: 'AA:AA:AA:AA:AA:03', channel: 6, rssi: -40, auth: 0 }],
-        bleDevices: [{ name: '', address: 'aa:bb:cc:dd:ee:ff', address_type: 'random', rssi: -60, connectable: false, manufacturer_id: -1, services: '' }] },
+        wifiNetworks: [{ ssid: 'Casa', bssid: 'AA:AA:AA:AA:AA:01', channel: 11, rssi: -52, auth: 0 }, { ssid: '<img src=x onerror="window.__xss=true">Nueva', bssid: 'AA:AA:AA:AA:AA:03', channel: 6, rssi: -40, auth: 0 }],
+        bleDevices: [{ name: '<img src=x onerror="window.__xss=true">BLE', address: 'aa:bb:cc:dd:ee:ff', address_type: 'random', rssi: -60, connectable: false, manufacturer_id: -1, services: '<svg onload="window.__xss=true">' }] },
         { status: 'complete', sensor: {} });
     })()`);
     assert.equal(await page.evaluate(`document.querySelector('#historyViewCounter').textContent`), '4 evaluaciones');
@@ -111,8 +137,10 @@ test('el dashboard migra localStorage, guarda evaluaciones completas, compara y 
     await page.waitFor(`!document.querySelector('#historyDetail').hidden`);
     const detail = await page.evaluate(`document.querySelector('#historyDetail').innerHTML`);
     assert.match(detail, /Redes Wi-Fi \(2\)/);
-    assert.match(detail, /&lt;b&gt;Nueva&lt;\/b&gt;/, 'el SSID se escapa al mostrarlo');
+    assert.match(detail, /&lt;img src=x onerror=/, 'el SSID y el nombre BLE se escapan al mostrarlos');
     assert.match(detail, /No disponible/, 'la identidad desconocida se muestra como no disponible');
+    assert.equal(await page.evaluate('window.__xss'), false, 'SSID, nombre BLE y servicios no ejecutan eventos');
+    assert.equal(await page.evaluate(`document.querySelectorAll('#historyDetail img, #historyDetail svg, #historyDetail [onerror], #historyDetail [onload]').length`), 0);
 
     // Comparación de las dos evaluaciones completas.
     // La lista se vuelve a dibujar tras cada selección: se consulta de nuevo antes de cada clic.

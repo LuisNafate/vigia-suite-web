@@ -35,6 +35,7 @@ El informe combina inventario Wi-Fi y Bluetooth LE, puntuación contextual, hall
 | Aplicación Android | [Repositorio móvil](https://github.com/LuisNafate/vigia-suite-android) |
 | APK de prueba | [Descargar 0.7.0 Beta](https://github.com/LuisNafate/vigia-suite-android/releases/tag/v0.7.0-beta) |
 | Última actividad | [Historial de cambios](https://github.com/LuisNafate/vigia-suite-web/commits/main) |
+| Controles de seguridad | [Matriz de aplicabilidad y evidencias](docs/SECURITY-CONTROLS.md) |
 
 ## Hardware objetivo
 

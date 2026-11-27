@@ -287,8 +287,34 @@ function renderModuleAdvice() {
   }
 }
 
+const HISTORY_LEVELS = Object.freeze(['BAJO', 'MEDIO', 'ALTO']);
+const historyInteger = (value, max) => Number.isInteger(value) && value >= 0 && value <= max ? value : null;
+
+// El respaldo antiguo vive en localStorage, que el usuario, una extensión u otro script del mismo origen pueden
+// modificar. Se considera entrada no confiable: sólo se aceptan los campos y rangos que produce Vigía Suite.
+function normalizeHistorySummary(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const createdAt = typeof raw.createdAt === 'string' ? Date.parse(raw.createdAt) : NaN;
+  const score = historyInteger(raw.score, 100);
+  const level = HISTORY_LEVELS.includes(raw.level) ? raw.level : null;
+  const wifiTotal = historyInteger(raw.wifi?.total, 10000);
+  const wifiOpen = historyInteger(raw.wifi?.open, 10000);
+  const bleTotal = historyInteger(raw.bluetooth?.total, 10000);
+  const bleNearby = historyInteger(raw.bluetooth?.nearby, 10000);
+  if (!Number.isFinite(createdAt) || score === null || !level || wifiTotal === null || wifiOpen === null
+    || bleTotal === null || bleNearby === null || wifiOpen > wifiTotal || bleNearby > bleTotal) return null;
+  return {
+    createdAt: new Date(createdAt).toISOString(), score, level,
+    wifi: { total: wifiTotal, open: wifiOpen },
+    bluetooth: { total: bleTotal, nearby: bleNearby },
+  };
+}
+
 function loadHistory() {
-  try { scanHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { scanHistory = []; }
+  try {
+    const stored = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    scanHistory = Array.isArray(stored) ? stored.map(normalizeHistorySummary).filter(Boolean).slice(0, 20) : [];
+  } catch { scanHistory = []; }
   renderHistory();
 }
 
@@ -297,12 +323,26 @@ function renderHistory() {
   if (window.VigiaHistory?.isReady()) { window.VigiaHistory.refresh(); return; }
   elements.historyCounter.textContent = `${scanHistory.length} ${scanHistory.length === 1 ? 'sesión' : 'sesiones'}`;
   elements.clearHistory.disabled = scanHistory.length === 0;
-  if (!scanHistory.length) { elements.historyList.innerHTML = '<p class="empty-copy">Aún no hay análisis guardados.</p>'; return; }
-  elements.historyList.innerHTML = scanHistory.map(item => `<div class="history-item">
-    <time>${escapeHtml(new Date(item.createdAt).toLocaleString('es-MX'))}</time>
-    <div><strong>${item.score}/100 · ${escapeHtml(item.level)}</strong><p>${item.wifi.total} redes, ${item.wifi.open} abiertas · ${item.bluetooth.total} BLE, ${item.bluetooth.nearby} cercanos</p></div>
-    <span class="risk-chip ${item.level.toLowerCase()}">${escapeHtml(item.level)}</span>
-  </div>`).join('');
+  elements.historyList.replaceChildren();
+  if (!scanHistory.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-copy';
+    empty.textContent = 'Aún no hay análisis guardados.';
+    elements.historyList.append(empty);
+    return;
+  }
+  for (const item of scanHistory) {
+    const row = document.createElement('div'); row.className = 'history-item';
+    const date = document.createElement('time'); date.textContent = new Date(item.createdAt).toLocaleString('es-MX');
+    const detail = document.createElement('div');
+    const title = document.createElement('strong'); title.textContent = `${item.score}/100 · ${item.level}`;
+    const summary = document.createElement('p');
+    summary.textContent = `${item.wifi.total} redes, ${item.wifi.open} abiertas · ${item.bluetooth.total} BLE, ${item.bluetooth.nearby} cercanos`;
+    detail.append(title, summary);
+    const level = document.createElement('span'); level.classList.add('risk-chip', item.level.toLowerCase()); level.textContent = item.level;
+    row.append(date, detail, level);
+    elements.historyList.append(row);
+  }
 }
 
 function sensorSnapshot() {

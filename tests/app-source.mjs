@@ -18,6 +18,14 @@ export async function loadFieldFilter() {
   return new Function(`${source}; return { WIFI_FIELDS, BLE_FIELDS, withValidFields };`)();
 }
 
+/** Validador del respaldo histórico de localStorage, antes de que sus datos lleguen al DOM. */
+export async function loadHistorySummaryNormalizer() {
+  const app = await appSource();
+  const source = [/const HISTORY_LEVELS = .*;/, /const historyInteger = .*;/,
+    /function normalizeHistorySummary\(raw\) \{[\s\S]*?^\}/m].map(pattern => pick(app, pattern)).join('\n');
+  return new Function(`${source}; return normalizeHistorySummary;`)();
+}
+
 /**
  * Cálculo de renderAnalysis() desde `const total` hasta el nivel, sin tocar el DOM. Recibe los arrays que app.js
  * guarda en `networks` y `bleDevices` (ya filtrados por withValidFields) y devuelve { score, level }.
